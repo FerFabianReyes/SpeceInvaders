@@ -1,41 +1,42 @@
-#include <Arduino.h>
 #include "fabgl.h"
 #include "fabutils.h"
+#include <Ps3Controller.h> 
 #include "sprites.h"
 #include "sounds.h"
-#include <Ps3Controller.h>
-#include "WiFiGeneric.h"
-
+#include "WiFiGeneric.h" 
+ 
+ 
+ 
 using fabgl::iclamp;
-
+ 
+ 
 fabgl::VGAController DisplayController;
 fabgl::Canvas        canvas(&DisplayController);
 fabgl::PS2Controller PS2Controller;
 SoundGenerator       soundGenerator;
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
 // IntroScene
-
+ 
 struct IntroScene : public Scene {
-
+ 
   static const int TEXTROWS = 4;
   static const int TEXT_X   = 130;
   static const int TEXT_Y   = 122;
-
+ 
   static int controller_; // 1 = keyboard, 2 = mouse
-
+ 
   int textRow_  = 0;
   int textCol_  = 0;
   int starting_ = 0;
-
+ 
   SamplesGenerator * music_ = nullptr;
-
+ 
   IntroScene()
     : Scene(0, 20, DisplayController.getViewPortWidth(), DisplayController.getViewPortHeight())
   {
   }
-
+ 
   void init()
   {
     canvas.setBrushColor(Color::Black);
@@ -46,44 +47,46 @@ struct IntroScene : public Scene {
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
     canvas.drawText(50, 15, "SPACE INVADERS");
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
-
-    canvas.setPenColor(Color::Green);
-    canvas.drawText(10, 40, "ESP32 version by Fabrizio Di Vittorio");
-    canvas.drawText(105, 55, "www.fabgl.com");
-
+ 
+    canvas.setPenColor(Color::Cyan);
+    canvas.drawText(80, 40, "con ESP32 por FIE");
+    canvas.drawText(20, 55, "Facultad de Ingenieria Electrica.");
+ 
     canvas.setPenColor(Color::Yellow);
-    canvas.drawText(72, 97, "* SCORE ADVANCE TABLE *");
+    canvas.drawText(72, 97, "* Tabla de puntajes *");
     canvas.drawBitmap(TEXT_X - 20 - 2, TEXT_Y, &bmpEnemyD);
     canvas.drawBitmap(TEXT_X - 20, TEXT_Y + 15, &bmpEnemyA[0]);
     canvas.drawBitmap(TEXT_X - 20, TEXT_Y + 30, &bmpEnemyB[0]);
     canvas.drawBitmap(TEXT_X - 20, TEXT_Y + 45, &bmpEnemyC[0]);
-
+ 
     canvas.setBrushColor(Color::Black);
 
+ 
     controller_ = 0;
-
+ 
     music_ = soundGenerator.playSamples(themeSoundSamples, sizeof(themeSoundSamples), 100, -1);
   }
-
+ 
   void update(int updateCount)
   {
-    static const char * scoreText[] = {"= ? MISTERY", "= 30 POINTS", "= 20 POINTS", "= 10 POINTS" };
+    static const char * scoreText[] = {"= ? MISTERIOSO", "= 30 PUNTOS", "= 20 PUNTOS", "= 10 PUNTOS" };
+ 
 
     auto keyboard = PS2Controller.keyboard();
     auto mouse    = PS2Controller.mouse();
-
+ 
     if (starting_) {
-
+ 
       if (starting_ > 50) {
         // stop music
         soundGenerator.detach(music_);
         // stop scene
         stop();
       }
-
+ 
       ++starting_;
       canvas.scroll(0, -5);
-
+ 
     } else {
       if (updateCount > 30 && updateCount % 5 == 0 && textRow_ < 4) {
         int x = TEXT_X + textCol_ * canvas.getFontInfo()->width;
@@ -96,54 +99,45 @@ struct IntroScene : public Scene {
           ++textRow_;
         }
       }
-
-      if (updateCount % 20 == 0) {
-        canvas.setPenColor(random(256), random(256), random(256));
-        if (keyboard && keyboard->isKeyboardAvailable() && mouse && mouse->isMouseAvailable())
-          canvas.drawText(45, 75, "Press [SPACE] or CLICK to Play");
-        else if (keyboard && keyboard->isKeyboardAvailable())
-          canvas.drawText(80, 75, "Press [SPACE] to Play");
-        else if (mouse && mouse->isMouseAvailable())
-          canvas.drawText(105, 75, "Click to Play");
+ 
+       if (updateCount % 20 == 0) {
+        canvas.setPenColor(51, random(255), random(255));
+        canvas.drawText(70, 75, "Presiona [START] para jugar");
       }
 
+ 
       // handle keyboard or mouse (after two seconds)
       if (updateCount > 50) {
-        if (keyboard && keyboard->isKeyboardAvailable() && keyboard->isVKDown(fabgl::VK_SPACE))
-          controller_ = 1;  // select keyboard as controller
-        else if (mouse && mouse->isMouseAvailable() && mouse->deltaAvailable() && mouse->getNextDelta(nullptr, 0) && mouse->status().buttons.left)
-          controller_ = 2;  // select mouse as controller
-        starting_ = (controller_ > 0);  // start only when a controller has been selected
+        if (Ps3.event.button_down.start)
+        starting_ = true; 
       }
     }
   }
-
+ 
   void collisionDetected(Sprite * spriteA, Sprite * spriteB, Point collisionPoint)
   {
   }
-
+ 
 };
-
-
+ 
+ 
 int IntroScene::controller_ = 0;
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
 // GameScene
-
-
+ 
+ 
 struct GameScene : public Scene {
-
+ 
   enum SpriteType { TYPE_PLAYERFIRE, TYPE_ENEMIESFIRE, TYPE_ENEMY, TYPE_PLAYER, TYPE_SHIELD, TYPE_ENEMYMOTHER };
-
+ 
   struct SISprite : Sprite {
     SpriteType type;
     uint8_t    enemyPoints;
   };
-
+ 
   enum GameState { GAMESTATE_PLAYING, GAMESTATE_PLAYERKILLED, GAMESTATE_ENDGAME, GAMESTATE_GAMEOVER, GAMESTATE_LEVELCHANGING, GAMESTATE_LEVELCHANGED };
-
+ 
   static const int PLAYERSCOUNT       = 1;
   static const int SHIELDSCOUNT       = 4;
   static const int ROWENEMIESCOUNT    = 11;
@@ -151,21 +145,21 @@ struct GameScene : public Scene {
   static const int ENEMIESFIRECOUNT   = 1;
   static const int ENEMYMOTHERCOUNT   = 1;
   static const int SPRITESCOUNT       = PLAYERSCOUNT + SHIELDSCOUNT + 5 * ROWENEMIESCOUNT + PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
-
+ 
   static const int ENEMIES_X_SPACE    = 16;
   static const int ENEMIES_Y_SPACE    = 10;
   static const int ENEMIES_START_X    = 0;
   static const int ENEMIES_START_Y    = 30;
   static const int ENEMIES_STEP_X     = 6;
   static const int ENEMIES_STEP_Y     = 8;
-
+ 
   static const int PLAYER_Y           = 170;
-
+ 
   static int lives_;
   static int score_;
   static int level_;
   static int hiScore_;
-
+ 
   SISprite * sprites_     = new SISprite[SPRITESCOUNT];
   SISprite * player_      = sprites_;
   SISprite * shields_     = player_ + PLAYERSCOUNT;
@@ -178,12 +172,12 @@ struct GameScene : public Scene {
   SISprite * playerFire_  = enemiesR5_ + ROWENEMIESCOUNT;
   SISprite * enemiesFire_ = playerFire_ + PLAYERFIRECOUNT;
   SISprite * enemyMother_ = enemiesFire_ + ENEMIESFIRECOUNT;
-
+ 
   int playerVelX_          = 0;  // used when controller is keyboard (0 = no move)
   int playerAbsX_          = -1; // used when controller is mouse (-1 = no move)
   int enemiesX_            = ENEMIES_START_X;
   int enemiesY_            = ENEMIES_START_Y;
-
+ 
   // enemiesDir_
   //   bit 0 : if 1 moving left
   //   bit 1 : if 1 moving right
@@ -194,37 +188,37 @@ struct GameScene : public Scene {
   //   2  = moving right
   //   4  = moving down (before was moving left)
   //   12 = moving down (before was moving right)
-
+ 
   static constexpr int ENEMY_MOV_LEFT              = 1;
   static constexpr int ENEMY_MOV_RIGHT             = 2;
   static constexpr int ENEMY_MOV_DOWN_BEFORE_LEFT  = 4;
   static constexpr int ENEMY_MOV_DOWN_BEFORE_RIGHT = 12;
-
+ 
   int enemiesDir_          = ENEMY_MOV_RIGHT;
-
+ 
   int enemiesAlive_        = ROWENEMIESCOUNT * 5;
   int enemiesSoundCount_   = 0;
   SISprite * lastHitEnemy_ = nullptr;
   GameState gameState_     = GAMESTATE_PLAYING;
-
+ 
   bool updateScore_        = true;
   int64_t pauseStart_;
-
+ 
   Bitmap bmpShield[4] = { Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
                           Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
                           Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
                           Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true), };
-
+ 
   GameScene()
     : Scene(SPRITESCOUNT, 20, DisplayController.getViewPortWidth(), DisplayController.getViewPortHeight())
   {
   }
-
+ 
   ~GameScene()
   {
     delete [] sprites_;
   }
-
+ 
   void initEnemy(Sprite * sprite, int points)
   {
     SISprite * s = (SISprite*) sprite;
@@ -233,7 +227,7 @@ struct GameScene : public Scene {
     s->enemyPoints = points;
     addSprite(s);
   }
-
+ 
   void init()
   {
     // setup player
@@ -273,22 +267,22 @@ struct GameScene : public Scene {
     enemyMother_->enemyPoints = 100;
     enemyMother_->moveTo(getWidth(), ENEMIES_START_Y);
     addSprite(enemyMother_);
-
+ 
     DisplayController.setSprites(sprites_, SPRITESCOUNT);
-
+ 
     canvas.setBrushColor(Color::Black);
     canvas.clear();
-
+ 
     canvas.setPenColor(Color::Green);
     canvas.drawLine(0, 180, 320, 180);
-
+ 
     //canvas.setPenColor(Color::Yellow);
     //canvas.drawRectangle(0, 0, getWidth() - 1, getHeight() - 1);
-
+ 
     canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
     canvas.selectFont(&fabgl::FONT_4x6);
     canvas.setPenColor(Color::White);
-    canvas.drawText(125, 20, "WE COME IN PEACE");
+    canvas.drawText(110, 20, "Bienvenido al espacio");
     canvas.selectFont(&fabgl::FONT_8x8);
     canvas.setPenColor(0, 255, 255);
     canvas.drawText(2, 2, "SCORE");
@@ -296,17 +290,17 @@ struct GameScene : public Scene {
     canvas.drawText(254, 2, "HI-SCORE");
     canvas.setPenColor(255, 255, 255);
     canvas.drawTextFmt(254, 181, "Level %02d", level_);
-
+ 
     if (IntroScene::controller_ == 2) {
       // setup mouse controller
       auto mouse = PS2Controller.mouse();
       mouse->setSampleRate(40);  // reduce number of samples from mouse to reduce delays
       mouse->setupAbsolutePositioner(getWidth() - player_->getWidth(), 0, false); // take advantage of mouse acceleration
     }
-
+ 
     showLives();
   }
-
+ 
   void drawScore()
   {
     canvas.setPenColor(255, 255, 255);
@@ -316,7 +310,7 @@ struct GameScene : public Scene {
     canvas.setPenColor(255, 255, 255);
     canvas.drawTextFmt(266, 14, "%05d", hiScore_);
   }
-
+ 
   void moveEnemy(SISprite * enemy, int x, int y, bool * touchSide)
   {
     if (enemy->visible) {
@@ -331,7 +325,7 @@ struct GameScene : public Scene {
       }
     }
   }
-
+ 
   void gameOver()
   {
     // disable enemies drawing, so text can be over them
@@ -347,17 +341,14 @@ struct GameScene : public Scene {
     canvas.drawText(90, 80, "GAME OVER");
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(0, 255, 0);
-    if (IntroScene::controller_ == 1)
-      canvas.drawText(110, 100, "Press [SPACE]");
-    else if (IntroScene::controller_ == 2)
-      canvas.drawText(93, 100, "Click to continue");
+    canvas.drawText(110, 100, "Press [X]");
     // change state
     gameState_ = GAMESTATE_GAMEOVER;
     level_ = 1;
     lives_ = 3;
     score_ = 0;
   }
-
+ 
   void levelChange()
   {
     ++level_;
@@ -371,21 +362,21 @@ struct GameScene : public Scene {
     gameState_  = GAMESTATE_LEVELCHANGED;
     pauseStart_ = esp_timer_get_time();
   }
-
+ 
   void update(int updateCount)
   {
     auto keyboard = PS2Controller.keyboard();
     auto mouse    = PS2Controller.mouse();
-
+ 
     if (updateScore_) {
       updateScore_ = false;
       drawScore();
     }
-
+ 
     if (gameState_ == GAMESTATE_PLAYING || gameState_ == GAMESTATE_PLAYERKILLED) {
-
+ 
       // move enemies and shoot
-      if ((updateCount % std::max(3, 21 - level_ * 2)) == 0) {
+      if ((updateCount % max(3, 21 - level_ * 2)) == 0) {
         // handle enemy explosion
         if (lastHitEnemy_) {
           lastHitEnemy_->visible = false;
@@ -433,7 +424,7 @@ struct GameScene : public Scene {
           }
         }
       }
-
+ 
       if (gameState_ == GAMESTATE_PLAYERKILLED) {
         // animate player explosion or restart playing other lives
         if ((updateCount % 20) == 0) {
@@ -444,27 +435,23 @@ struct GameScene : public Scene {
             gameState_ = GAMESTATE_PLAYING;
           }
         }
-      } else if (IntroScene::controller_ == 1 && playerVelX_ != 0) {
-        // move player using Keyboard
+      } else if (playerVelX_ != 0) {
+        // move player using PS3
         player_->x += playerVelX_;
+        
         player_->x = iclamp(player_->x, 0, getWidth() - player_->getWidth());
         updateSprite(player_);
-      } else if (IntroScene::controller_ == 2 && playerAbsX_ != -1) {
-        // move player using Mouse
-        player_->x = playerAbsX_;
-        playerAbsX_ = -1;
-        updateSprite(player_);
-      }
-
+      } 
+ 
       // move player fire
       if (playerFire_->visible) {
-        playerFire_->y -= 3;
+        playerFire_->y -= 2;
         if (playerFire_->y < ENEMIES_START_Y)
           playerFire_->visible = false;
         else
           updateSpriteAndDetectCollisions(playerFire_);
       }
-
+ 
       // move enemies fire
       if (enemiesFire_->visible) {
         enemiesFire_->y += 2;
@@ -474,7 +461,7 @@ struct GameScene : public Scene {
         else
           updateSpriteAndDetectCollisions(enemiesFire_);
       }
-
+ 
       // move enemy mother ship
       if (enemyMother_->visible && enemyMother_->getFrameIndex() == 0) {
         enemyMother_->x -= 1;
@@ -483,7 +470,7 @@ struct GameScene : public Scene {
         else
           updateSprite(enemyMother_);
       }
-
+ 
       // start enemy mother ship
       if ((updateCount % 800) == 0) {
         soundGenerator.playSamples(motherShipSoundSamples, sizeof(motherShipSoundSamples), 100, 7000);
@@ -491,67 +478,55 @@ struct GameScene : public Scene {
         enemyMother_->setFrame(0);
         enemyMother_->visible = true;
       }
-
+ 
       // handle fire and movement from controller
-      if (IntroScene::controller_ == 1) {
-        // KEYBOARD controller
-        if (keyboard->isVKDown(fabgl::VK_LEFT))
+        if (abs(Ps3.event.analog_changed.stick.lx) + abs(Ps3.event.analog_changed.stick.ly) > 2 )
           playerVelX_ = -1;
-        else if (keyboard->isVKDown(fabgl::VK_RIGHT))
+        else if (abs(Ps3.event.analog_changed.stick.rx) + abs(Ps3.event.analog_changed.stick.ry) > 2 )
           playerVelX_ = +1;
         else
           playerVelX_ = 0;
-        if (keyboard->isVKDown(fabgl::VK_SPACE) && !playerFire_->visible)  // player fire?
-          fire();
-      } else if (IntroScene::controller_ == 2) {
-        // MOUSE controller
-        if (mouse->deltaAvailable()) {
-          MouseDelta delta;
-          mouse->getNextDelta(&delta);
-          mouse->updateAbsolutePosition(&delta);
-          playerAbsX_ = mouse->status().X;
-          if (delta.buttons.left && !playerFire_->visible)    // player fire?
-            fire();
-        }
-      }
-    }
 
+
+        if (abs(Ps3.event.analog_changed.button.cross))  // player fire?
+          fire(); 
+    }
+ 
     if (gameState_ == GAMESTATE_ENDGAME)
       gameOver();
-
+ 
     if (gameState_ == GAMESTATE_LEVELCHANGING)
       levelChange();
-
+ 
     if (gameState_ == GAMESTATE_LEVELCHANGED && esp_timer_get_time() >= pauseStart_ + 2500000) {
       stop(); // restart from next level
       DisplayController.removeSprites();
     }
-
+ 
     if (gameState_ == GAMESTATE_GAMEOVER) {
-
+ 
       // animate player burning
       if ((updateCount % 20) == 0)
         player_->setFrame( player_->getFrameIndex() == 1 ? 2 : 1);
-
+ 
       // wait for SPACE or click from mouse
-      if ((IntroScene::controller_ == 1 && keyboard->isVKDown(fabgl::VK_SPACE)) ||
-          (IntroScene::controller_ == 2 && mouse->deltaAvailable() && mouse->getNextDelta(nullptr, 0) && mouse->status().buttons.left)) {
+      if (Ps3.event.button_down.cross) {
         stop();
         DisplayController.removeSprites();
       }
-
+ 
     }
-
+ 
     DisplayController.refreshSprites();
   }
-
+ 
   // player shoots
   void fire()
   {
     playerFire_->moveTo(player_->x + 7, player_->y - 1)->visible = true;
     soundGenerator.playSamples(fireSoundSamples, sizeof(fireSoundSamples));
   }
-
+ 
   // shield has been damaged
   void damageShield(SISprite * shield, Point collisionPoint)
   {
@@ -565,7 +540,7 @@ struct GameScene : public Scene {
       shieldBitmap->setPixel(px, py, 0);
     }
   }
-
+ 
   void showLives()
   {
     canvas.fillRectangle(1, 181, 100, 195);
@@ -574,7 +549,7 @@ struct GameScene : public Scene {
     for (int i = 0; i < lives_; ++i)
       canvas.drawBitmap(15 + i * (bmpPlayer.width + 5), 183, &bmpPlayer);
   }
-
+ 
   void collisionDetected(Sprite * spriteA, Sprite * spriteB, Point collisionPoint)
   {
     SISprite * sA = (SISprite*) spriteA;
@@ -615,37 +590,36 @@ struct GameScene : public Scene {
       updateScore_ = true;
     }
   }
-
+ 
 };
-
+ 
 int GameScene::hiScore_ = 0;
 int GameScene::level_   = 1;
 int GameScene::lives_   = 3;
 int GameScene::score_   = 0;
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// put function declarations here:
+ 
+ 
+ 
+ 
+ 
 void setup()
 {
-    Serial.begin(115200);
-
-    Ps3.begin("24:6f:28:af:1c:66");
-    DisplayController.begin();
-    DisplayController.setResolution(VGA_320x200_75Hz);
-    Serial.println("Ready.");
-
+  PS2Controller.begin(PS2Preset::KeyboardPort0_MousePort1, KbdMode::GenerateVirtualKeys);
+  Ps3.begin("24:6f:28:af:1c:66");
+  DisplayController.begin();
+  DisplayController.setResolution(VGA_320x200_75Hz);
+ 
+  // adjust this to center screen in your monitor
+  //DisplayController.moveScreen(20, -2);
 }
-
+ 
+ 
 void loop()
 {
-if (Ps3.isConnected()){
   if (GameScene::level_ == 1) {
     IntroScene introScene;
     introScene.start();
   }
   GameScene gameScene;
   gameScene.start();
-  }
 }
