@@ -338,10 +338,10 @@ struct GameScene : public Scene {
     canvas.drawRectangle(80, 60, 240, 130);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
     canvas.setPenColor(255, 255, 255);
-    canvas.drawText(90, 80, "GAME OVER");
+    canvas.drawText(90, 80, "FIN DEL JUEGO");
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(0, 255, 0);
-    canvas.drawText(110, 100, "Press [X]");
+    canvas.drawText(110, 100, "Presiona [X]");
     // change state
     gameState_ = GAMESTATE_GAMEOVER;
     level_ = 1;
@@ -479,18 +479,23 @@ struct GameScene : public Scene {
         enemyMother_->visible = true;
       }
  
-      // handle fire and movement from controller
-        if (abs(Ps3.event.analog_changed.stick.lx) + abs(Ps3.event.analog_changed.stick.ly) > 2 )
-          playerVelX_ = -1;
-        else if (abs(Ps3.event.analog_changed.stick.rx) + abs(Ps3.event.analog_changed.stick.ry) > 2 )
-          playerVelX_ = +1;
-        else
-          playerVelX_ = 0;
+      //Uso del control de PS3. 
+      //  bool moveR = false, moveL = false;
+      if (Ps3.data.analog.stick.lx != 0) {
+        if (Ps3.data.analog.stick.lx > 0) {
+            playerVelX_ = +1;
+        }else {
+        playerVelX_ = -1;
+        }
+      } 
+      else {
+        playerVelX_ = 0;
+      }
 
 
-        if (abs(Ps3.event.analog_changed.button.cross))  // player fire?
+      if (abs(Ps3.event.analog_changed.button.cross) && !playerFire_->visible)  // player fire?
           fire(); 
-    }
+      }
  
     if (gameState_ == GAMESTATE_ENDGAME)
       gameOver();
