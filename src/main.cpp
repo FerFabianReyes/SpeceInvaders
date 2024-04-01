@@ -481,6 +481,7 @@ struct GameScene : public Scene {
  
       //Uso del control de PS3. 
       //  bool moveR = false, moveL = false;
+<<<<<<< HEAD
       if (Ps3.data.analog.stick.lx != 0) {
         if (Ps3.data.analog.stick.lx > 0) {
             playerVelX_ = +1;
@@ -494,6 +495,17 @@ struct GameScene : public Scene {
 
 
       if (abs(Ps3.event.analog_changed.button.cross) && !playerFire_->visible)  // player fire?
+=======
+        if (abs(Ps3.event.analog_changed.stick.lx) > 1)
+          playerVelX_ = -1;
+        else if (abs(Ps3.event.analog_changed.stick.ly) > 1 )
+          playerVelX_ = +1;
+        else
+          playerVelX_ = 0;
+
+
+        if (abs(Ps3.event.analog_changed.button.cross) && !playerFire_->visible)  // player fire?
+>>>>>>> 8dd32bcf9a0dc000befed9d9955f5afd30efe601
           fire(); 
       }
  
