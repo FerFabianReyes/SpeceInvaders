@@ -291,13 +291,6 @@ struct GameScene : public Scene {
     canvas.setPenColor(255, 255, 255);
     canvas.drawTextFmt(254, 181, "Level %02d", level_);
  
-    if (IntroScene::controller_ == 2) {
-      // setup mouse controller
-      auto mouse = PS2Controller.mouse();
-      mouse->setSampleRate(40);  // reduce number of samples from mouse to reduce delays
-      mouse->setupAbsolutePositioner(getWidth() - player_->getWidth(), 0, false); // take advantage of mouse acceleration
-    }
- 
     showLives();
   }
  
@@ -338,7 +331,7 @@ struct GameScene : public Scene {
     canvas.drawRectangle(80, 60, 240, 130);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
     canvas.setPenColor(255, 255, 255);
-    canvas.drawText(90, 80, "FIN DEL JUEGO");
+    canvas.drawText(70, 80, "FIN DEL JUEGO");
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(0, 255, 0);
     canvas.drawText(110, 100, "Presiona [X]");
@@ -365,8 +358,6 @@ struct GameScene : public Scene {
  
   void update(int updateCount)
   {
-    auto keyboard = PS2Controller.keyboard();
-    auto mouse    = PS2Controller.mouse();
  
     if (updateScore_) {
       updateScore_ = false;
@@ -480,12 +471,10 @@ struct GameScene : public Scene {
       }
  
       //Uso del control de PS3. 
-      //  bool moveR = false, moveL = false;
-<<<<<<< HEAD
-      if (Ps3.data.analog.stick.lx != 0) {
-        if (Ps3.data.analog.stick.lx > 0) {
+      if (Ps3.data.analog.stick.rx > 100 || Ps3.data.analog.stick.rx < -100) {
+        if (Ps3.data.analog.stick.rx > 100) {
             playerVelX_ = +1;
-        }else {
+        }else if (Ps3.data.analog.stick.rx < -100) {
         playerVelX_ = -1;
         }
       } 
@@ -495,17 +484,6 @@ struct GameScene : public Scene {
 
 
       if (abs(Ps3.event.analog_changed.button.cross) && !playerFire_->visible)  // player fire?
-=======
-        if (abs(Ps3.event.analog_changed.stick.lx) > 1)
-          playerVelX_ = -1;
-        else if (abs(Ps3.event.analog_changed.stick.ly) > 1 )
-          playerVelX_ = +1;
-        else
-          playerVelX_ = 0;
-
-
-        if (abs(Ps3.event.analog_changed.button.cross) && !playerFire_->visible)  // player fire?
->>>>>>> 8dd32bcf9a0dc000befed9d9955f5afd30efe601
           fire(); 
       }
  
@@ -526,7 +504,7 @@ struct GameScene : public Scene {
       if ((updateCount % 20) == 0)
         player_->setFrame( player_->getFrameIndex() == 1 ? 2 : 1);
  
-      // wait for SPACE or click from mouse
+  
       if (Ps3.event.button_down.cross) {
         stop();
         DisplayController.removeSprites();
@@ -621,8 +599,7 @@ int GameScene::score_   = 0;
  
 void setup()
 {
-  PS2Controller.begin(PS2Preset::KeyboardPort0_MousePort1, KbdMode::GenerateVirtualKeys);
-  Ps3.begin("24:6f:28:af:1c:66");
+  Ps3.begin("78:dd:08:4d:94:a4");
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
  
