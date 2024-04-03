@@ -13,8 +13,8 @@ using fabgl::iclamp;
 fabgl::VGAController DisplayController;
 fabgl::Canvas        canvas(&DisplayController);
 SoundGenerator       soundGenerator;
- 
- 
+
+
 // IntroScene
  
 struct IntroScene : public Scene {
@@ -48,14 +48,18 @@ struct IntroScene : public Scene {
  
     canvas.setPenColor(Color::Cyan);
     canvas.drawText(80, 40, "con ESP32 por FIE");
-    canvas.drawText(20, 55, "Facultad de Ingenieria Electrica.");
+    canvas.drawText(30, 55, "Facultad de Ingenieria Electrica.");
  
     canvas.setPenColor(Color::Yellow);
-    canvas.drawText(72, 97, "* Tabla de puntajes *");
-    canvas.drawBitmap(TEXT_X - 20 - 2, TEXT_Y, &bmpEnemyD);
-    canvas.drawBitmap(TEXT_X - 20, TEXT_Y + 15, &bmpEnemyA[0]);
-    canvas.drawBitmap(TEXT_X - 20, TEXT_Y + 30, &bmpEnemyB[0]);
-    canvas.drawBitmap(TEXT_X - 20, TEXT_Y + 45, &bmpEnemyC[0]);
+    canvas.setBrushColor(0, 0, 0);
+    canvas.fillRectangle(70, 92, 240, 110);
+    canvas.drawRectangle(70, 92, 240, 110);
+    canvas.setPenColor(Color::Yellow);
+    canvas.drawText(72, 97, "  Tabla de puntajes  ");
+    canvas.drawBitmap(TEXT_X - 40 - 2, TEXT_Y - 2, &bmpEnemyD);
+    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 10, &bmpEnemyA[0]);
+    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 25, &bmpEnemyB[0]);
+    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 40, &bmpEnemyC[0]);
  
     canvas.setBrushColor(Color::Black);
 
@@ -84,7 +88,7 @@ struct IntroScene : public Scene {
  
     } else {
       if (updateCount > 30 && updateCount % 5 == 0 && textRow_ < 4) {
-        int x = TEXT_X + textCol_ * canvas.getFontInfo()->width;
+        int x = TEXT_X + textCol_ * canvas.getFontInfo()->width - 9;
         int y = TEXT_Y + textRow_ * 15 - 4;
         canvas.setPenColor(Color::White);
         canvas.drawChar(x, y, scoreText[textRow_][textCol_]);
@@ -97,7 +101,7 @@ struct IntroScene : public Scene {
  
        if (updateCount % 20 == 0) {
         canvas.setPenColor(51, random(255), random(255));
-        canvas.drawText(70, 75, "Presiona [START] para jugar");
+        canvas.drawText(50, 75, "Presiona [START] para jugar");
       }
 
  
@@ -115,11 +119,7 @@ struct IntroScene : public Scene {
  
 };
  
- 
- 
 // GameScene
- 
- 
 struct GameScene : public Scene {
  
   enum SpriteType { TYPE_PLAYERFIRE, TYPE_ENEMIESFIRE, TYPE_ENEMY, TYPE_PLAYER, TYPE_SHIELD, TYPE_ENEMYMOTHER };
@@ -261,7 +261,9 @@ struct GameScene : public Scene {
     addSprite(enemyMother_);
  
     DisplayController.setSprites(sprites_, SPRITESCOUNT);
- 
+
+
+
     canvas.setBrushColor(Color::Black);
     canvas.clear();
  
@@ -593,8 +595,6 @@ void setup()
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
  
-  // adjust this to center screen in your monitor
-  //DisplayController.moveScreen(20, -2);
 }
  
  
