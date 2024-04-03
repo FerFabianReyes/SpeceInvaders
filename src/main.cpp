@@ -12,7 +12,6 @@ using fabgl::iclamp;
  
 fabgl::VGAController DisplayController;
 fabgl::Canvas        canvas(&DisplayController);
-fabgl::PS2Controller PS2Controller;
 SoundGenerator       soundGenerator;
  
  
@@ -24,7 +23,6 @@ struct IntroScene : public Scene {
   static const int TEXT_X   = 130;
   static const int TEXT_Y   = 122;
  
-  static int controller_; // 1 = keyboard, 2 = mouse
  
   int textRow_  = 0;
   int textCol_  = 0;
@@ -62,7 +60,6 @@ struct IntroScene : public Scene {
     canvas.setBrushColor(Color::Black);
 
  
-    controller_ = 0;
  
     music_ = soundGenerator.playSamples(themeSoundSamples, sizeof(themeSoundSamples), 100, -1);
   }
@@ -72,9 +69,7 @@ struct IntroScene : public Scene {
     static const char * scoreText[] = {"= ? MISTERIOSO", "= 30 PUNTOS", "= 20 PUNTOS", "= 10 PUNTOS" };
  
 
-    auto keyboard = PS2Controller.keyboard();
-    auto mouse    = PS2Controller.mouse();
- 
+
     if (starting_) {
  
       if (starting_ > 50) {
@@ -121,8 +116,6 @@ struct IntroScene : public Scene {
 };
  
  
-int IntroScene::controller_ = 0;
- 
  
 // GameScene
  
@@ -146,7 +139,7 @@ struct GameScene : public Scene {
   static const int ENEMYMOTHERCOUNT   = 1;
   static const int SPRITESCOUNT       = PLAYERSCOUNT + SHIELDSCOUNT + 5 * ROWENEMIESCOUNT + PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
  
-  static const int ENEMIES_X_SPACE    = 16;
+  static const int ENEMIES_X_SPACE    = 16; //Espacio entre enemigos
   static const int ENEMIES_Y_SPACE    = 10;
   static const int ENEMIES_START_X    = 0;
   static const int ENEMIES_START_Y    = 30;
@@ -173,8 +166,7 @@ struct GameScene : public Scene {
   SISprite * enemiesFire_ = playerFire_ + PLAYERFIRECOUNT;
   SISprite * enemyMother_ = enemiesFire_ + ENEMIESFIRECOUNT;
  
-  int playerVelX_          = 0;  // used when controller is keyboard (0 = no move)
-  int playerAbsX_          = -1; // used when controller is mouse (-1 = no move)
+  int playerVelX_          = 0;  // 0 = no move
   int enemiesX_            = ENEMIES_START_X;
   int enemiesY_            = ENEMIES_START_Y;
  
@@ -276,9 +268,7 @@ struct GameScene : public Scene {
     canvas.setPenColor(Color::Green);
     canvas.drawLine(0, 180, 320, 180);
  
-    //canvas.setPenColor(Color::Yellow);
-    //canvas.drawRectangle(0, 0, getWidth() - 1, getHeight() - 1);
- 
+
     canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
     canvas.selectFont(&fabgl::FONT_4x6);
     canvas.setPenColor(Color::White);
@@ -289,7 +279,7 @@ struct GameScene : public Scene {
     canvas.setPenColor(0, 0, 255);
     canvas.drawText(254, 2, "HI-SCORE");
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(254, 181, "Level %02d", level_);
+    canvas.drawTextFmt(254, 181, "Nivel %02d", level_);
  
     showLives();
   }
@@ -327,11 +317,11 @@ struct GameScene : public Scene {
     // show game over
     canvas.setPenColor(0, 255, 0);
     canvas.setBrushColor(0, 0, 0);
-    canvas.fillRectangle(80, 60, 240, 130);
-    canvas.drawRectangle(80, 60, 240, 130);
+    canvas.fillRectangle(40, 60, 270, 130);
+    canvas.drawRectangle(40, 60, 270, 130);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
     canvas.setPenColor(255, 255, 255);
-    canvas.drawText(70, 80, "FIN DEL JUEGO");
+    canvas.drawText(55, 80, "FIN DEL JUEGO");
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(0, 255, 0);
     canvas.drawText(110, 100, "Presiona [X]");
@@ -349,7 +339,7 @@ struct GameScene : public Scene {
     canvas.setPenColor(0, 255, 0);
     canvas.drawRectangle(80, 80, 240, 110);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
-    canvas.drawTextFmt(105, 88, "LEVEL %d", level_);
+    canvas.drawTextFmt(105, 88, "NIVEL %d", level_);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     // change state
     gameState_  = GAMESTATE_LEVELCHANGED;
@@ -429,14 +419,13 @@ struct GameScene : public Scene {
       } else if (playerVelX_ != 0) {
         // move player using PS3
         player_->x += playerVelX_;
-        
         player_->x = iclamp(player_->x, 0, getWidth() - player_->getWidth());
         updateSprite(player_);
       } 
  
       // move player fire
       if (playerFire_->visible) {
-        playerFire_->y -= 2;
+        playerFire_->y -= 3;
         if (playerFire_->y < ENEMIES_START_Y)
           playerFire_->visible = false;
         else
@@ -471,10 +460,10 @@ struct GameScene : public Scene {
       }
  
       //Uso del control de PS3. 
-      if (Ps3.data.analog.stick.rx > 100 || Ps3.data.analog.stick.rx < -100) {
-        if (Ps3.data.analog.stick.rx > 100) {
+      if (Ps3.data.analog.stick.rx > 90 || Ps3.data.analog.stick.rx < -90) {
+        if (Ps3.data.analog.stick.rx > 90) {
             playerVelX_ = +1;
-        }else if (Ps3.data.analog.stick.rx < -100) {
+        }else if (Ps3.data.analog.stick.rx < -90) {
         playerVelX_ = -1;
         }
       } 
@@ -513,6 +502,7 @@ struct GameScene : public Scene {
     }
  
     DisplayController.refreshSprites();
+
   }
  
   // player shoots
