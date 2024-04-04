@@ -37,31 +37,31 @@ struct IntroScene : public Scene {
  
   void init()
   {
-    canvas.setBrushColor(Color::Black);
+    canvas.setBrushColor(21, 26, 70);
     canvas.clear();
     canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
     canvas.selectFont(&fabgl::FONT_8x8);
-    canvas.setPenColor(Color::BrightWhite);
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
-    canvas.drawText(50, 15, "SPACE INVADERS");
+    canvas.setPenColor(217, 245, 255);
+    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(5));
+    canvas.drawText(50, 20, "SPACE INVADERS");
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
  
-    canvas.setPenColor(Color::Cyan);
-    canvas.drawText(80, 40, "con ESP32 por FIE");
+    canvas.setPenColor(59, 167, 204);
+    canvas.drawText(85, 40, "con ESP32 por FIE");
     canvas.drawText(30, 55, "Facultad de Ingenieria Electrica.");
  
-    canvas.setPenColor(Color::Yellow);
+    canvas.setPenColor(248, 252, 167);
     canvas.setBrushColor(0, 0, 0);
-    canvas.fillRectangle(70, 92, 240, 110);
+   // canvas.fillRectangle(70, 92, 240, 110);
     canvas.drawRectangle(70, 92, 240, 110);
-    canvas.setPenColor(Color::Yellow);
+    canvas.setPenColor(248, 252, 167);
     canvas.drawText(72, 97, "  Tabla de puntajes  ");
     canvas.drawBitmap(TEXT_X - 40 - 2, TEXT_Y - 2, &bmpEnemyD);
     canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 10, &bmpEnemyA[0]);
     canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 25, &bmpEnemyB[0]);
     canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 40, &bmpEnemyC[0]);
  
-    canvas.setBrushColor(Color::Black);
+    canvas.setBrushColor(21, 26, 70);
 
  
  
@@ -90,7 +90,7 @@ struct IntroScene : public Scene {
       if (updateCount > 30 && updateCount % 5 == 0 && textRow_ < 4) {
         int x = TEXT_X + textCol_ * canvas.getFontInfo()->width - 9;
         int y = TEXT_Y + textRow_ * 15 - 4;
-        canvas.setPenColor(Color::White);
+        canvas.setPenColor(255, 255, 255);
         canvas.drawChar(x, y, scoreText[textRow_][textCol_]);
         ++textCol_;
         if (scoreText[textRow_][textCol_] == 0) {
@@ -100,7 +100,7 @@ struct IntroScene : public Scene {
       }
  
        if (updateCount % 20 == 0) {
-        canvas.setPenColor(51, random(255), random(255));
+        canvas.setPenColor(random(255), random(255), 255);
         canvas.drawText(50, 75, "Presiona [START] para jugar");
       }
 
@@ -196,10 +196,10 @@ struct GameScene : public Scene {
   bool updateScore_        = true;
   int64_t pauseStart_;
  
-  Bitmap bmpShield[4] = { Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
-                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
-                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
-                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true), };
+  Bitmap bmpShield[4] = { Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(47, 93, 130), true),
+                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(47, 93, 130), true),
+                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(47, 93, 130), true),
+                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(47, 93, 130), true), };
  
   GameScene()
     : Scene(SPRITESCOUNT, 20, DisplayController.getViewPortWidth(), DisplayController.getViewPortHeight())
@@ -264,24 +264,24 @@ struct GameScene : public Scene {
 
 
 
-    canvas.setBrushColor(Color::Black);
+    canvas.setBrushColor(21, 26, 70);
     canvas.clear();
  
-    canvas.setPenColor(Color::Green);
+    canvas.setPenColor(47, 93, 130);
     canvas.drawLine(0, 180, 320, 180);
  
 
     canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
     canvas.selectFont(&fabgl::FONT_4x6);
-    canvas.setPenColor(Color::White);
+    canvas.setPenColor(108, 155, 245);
     canvas.drawText(110, 20, "Bienvenido al espacio");
     canvas.selectFont(&fabgl::FONT_8x8);
-    canvas.setPenColor(0, 255, 255);
+    canvas.setPenColor(69, 142, 237);
     canvas.drawText(2, 2, "SCORE");
-    canvas.setPenColor(0, 0, 255);
+    canvas.setPenColor(248, 252, 167);
     canvas.drawText(254, 2, "HI-SCORE");
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(254, 181, "Nivel %02d", level_);
+    canvas.drawTextFmt(256, 181, "Nivel %02d", level_);
  
     showLives();
   }
@@ -316,16 +316,16 @@ struct GameScene : public Scene {
     // disable enemies drawing, so text can be over them
     for (int i = 0; i < ROWENEMIESCOUNT * 5; ++i)
       enemies_[i].allowDraw = false;
-    // show game over
-    canvas.setPenColor(0, 255, 0);
-    canvas.setBrushColor(0, 0, 0);
+    // show game over 
+    canvas.setPenColor(248, 252, 167);
+    canvas.setBrushColor(28, 35, 92);
     canvas.fillRectangle(40, 60, 270, 130);
     canvas.drawRectangle(40, 60, 270, 130);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
     canvas.setPenColor(255, 255, 255);
     canvas.drawText(55, 80, "FIN DEL JUEGO");
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
-    canvas.setPenColor(0, 255, 0);
+    canvas.setPenColor(248, 252, 167);
     canvas.drawText(110, 100, "Presiona [X]");
     // change state
     gameState_ = GAMESTATE_GAMEOVER;
@@ -338,7 +338,7 @@ struct GameScene : public Scene {
   {
     ++level_;
     // show game over
-    canvas.setPenColor(0, 255, 0);
+    canvas.setPenColor(248, 252, 167);
     canvas.drawRectangle(80, 80, 240, 110);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
     canvas.drawTextFmt(105, 88, "NIVEL %d", level_);
