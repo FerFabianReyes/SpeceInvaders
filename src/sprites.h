@@ -34,7 +34,7 @@ const uint8_t player_fire_data[][6] = {
 Bitmap bmpPlayerFire = Bitmap(1, 6, player_fire_data, PixelFormat::Mask, RGB888(230, 232, 235));
 
 //Jugador 2
-Bitmap bmpPlayerFire2 = Bitmap(1, 6, player_fire_data, PixelFormat::Mask, RGB888(182, 194, 212));
+Bitmap bmpPlayerFire2 = Bitmap(1, 6, player_fire_data, PixelFormat::Mask, RGB888(167, 170, 242));
 
 
 // player_explosion: 2x 16x8
