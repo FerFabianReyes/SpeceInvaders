@@ -141,6 +141,7 @@ struct GameScene : public Scene
   {
     GAMESTATE_PLAYING,
     GAMESTATE_PLAYERKILLED,
+    GAMESTATE_PLAYER2KILLED,
     GAMESTATE_ENDGAME,
     GAMESTATE_GAMEOVER,
     GAMESTATE_LEVELCHANGING,
@@ -454,7 +455,23 @@ struct GameScene : public Scene
         }
       }
 
-      if (gameState_ == GAMESTATE_PLAYERKILLED)
+      if (gameState_ == GAMESTATE_PLAYER2KILLED)
+      {
+        // animate player explosion or restart playing other lives
+        if ((updateCount % 20) == 0)
+        {
+          if (player2_->getFrameIndex() == 1)
+          {
+            player2_->setFrame(2);
+          }
+          else
+          {
+            player2_->setFrame(0);
+            gameState_ = GAMESTATE_PLAYING;
+          }
+        }
+      }
+      else if (gameState_ == GAMESTATE_PLAYERKILLED)
       {
         // animate player explosion or restart playing other lives
         if ((updateCount % 20) == 0)
@@ -469,8 +486,7 @@ struct GameScene : public Scene
             gameState_ = GAMESTATE_PLAYING;
           }
         }
-      }
-      else if (playerVelX_ != 0 || player2VelX_ != 0)
+      } else if (playerVelX_ != 0 || player2VelX_ != 0)
       {
         // move player using PS3
         player_->x += playerVelX_;
