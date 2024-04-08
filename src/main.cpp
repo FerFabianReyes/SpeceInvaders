@@ -723,7 +723,7 @@ int GameScene::score_ = 0;
 
 void setup()
 {
-  Ps3.begin("78:dd:08:4d:94:a4");
+  Ps3.begin("24:6f:28:af:1c:66");
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
