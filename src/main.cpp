@@ -123,6 +123,7 @@ struct GameScene : public Scene
   enum SpriteType
   {
     TYPE_PLAYERFIRE,
+    TYPE_PLAYERFIRE2,
     TYPE_ENEMIESFIRE,
     TYPE_ENEMY,
     TYPE_PLAYER,
@@ -265,7 +266,7 @@ struct GameScene : public Scene
     // setup player fire 2
     playerFire2_->addBitmap(&bmpPlayerFire2);
     playerFire2_->visible = false;
-    playerFire2_->type = TYPE_PLAYERFIRE;
+    playerFire2_->type = TYPE_PLAYERFIRE2;
     addSprite(playerFire2_);
 
     // setup shields
@@ -677,6 +678,7 @@ struct GameScene : public Scene
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
     }
+ 
     if (sB->type == TYPE_SHIELD)
     {
       // something hits a shield
@@ -692,6 +694,20 @@ struct GameScene : public Scene
       gameState_ = lives_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
       player_->setFrame(1);
       showLives();
+    }
+
+     if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
+    {
+      // player fire hits an enemy
+      soundGenerator.playSamples(shootSoundSamples, sizeof(shootSoundSamples));
+      sA->visible = false;
+      sB->setFrame(2);
+      lastHitEnemy_ = sB;
+      --enemiesAlive_;
+      score_ += sB->enemyPoints;
+      updateScore_ = true;
+      if (enemiesAlive_ == 0)
+        gameState_ = GAMESTATE_LEVELCHANGING;
     }
 
     if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
