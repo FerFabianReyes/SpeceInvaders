@@ -368,6 +368,7 @@ struct GameScene : public Scene
     gameState_ = GAMESTATE_GAMEOVER;
     level_ = 1;
     lives_ = 3;
+    livesPl2_ = 3;
     score_ = 0;
   }
 
@@ -455,7 +456,7 @@ struct GameScene : public Scene
         }
       }
 
-      if (gameState_ == GAMESTATE_PLAYER2KILLED)
+     if (gameState_ == GAMESTATE_PLAYER2KILLED)
       {
         // animate player explosion or restart playing other lives
         if ((updateCount % 20) == 0)
@@ -693,7 +694,7 @@ struct GameScene : public Scene
       showLives();
     }
 
-    /*if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
+    if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
     {
       // enemies fire hits player
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
@@ -701,7 +702,7 @@ struct GameScene : public Scene
       gameState_ = livesPl2_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
       player2_->setFrame(1);
       showLives();
-    }*/
+    }
 
     if (sB->type == TYPE_ENEMYMOTHER)
     {
@@ -719,6 +720,7 @@ struct GameScene : public Scene
 int GameScene::hiScore_ = 0;
 int GameScene::level_ = 1;
 int GameScene::lives_ = 3;
+int GameScene::livesPl2_ = 3;
 int GameScene::score_ = 0;
 
 void setup()
