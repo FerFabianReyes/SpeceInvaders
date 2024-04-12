@@ -396,7 +396,7 @@ struct GameScene : public Scene
       drawScore();
     }
 
-    if (gameState_ == GAMESTATE_PLAYING || gameState_ == GAMESTATE_PLAYERKILLED)
+    if (gameState_ == GAMESTATE_PLAYING || gameState_ == GAMESTATE_PLAYERKILLED || gameState_ == GAMESTATE_PLAYER2KILLED)
     {
 
       // move enemies and shoot
@@ -715,7 +715,7 @@ struct GameScene : public Scene
       // enemies fire hits player
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       --livesPl2_;
-      gameState_ = livesPl2_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
+      gameState_ = livesPl2_ ? GAMESTATE_PLAYER2KILLED : GAMESTATE_ENDGAME;
       player2_->setFrame(1);
       showLives();
     }
