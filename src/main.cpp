@@ -411,11 +411,14 @@ struct GameScene : public Scene {
       if (gameState_ == GAMESTATE_PLAYERKILLED) {
         // animate player explosion or restart playing other lives
         if ((updateCount % 20) == 0) {
-          if (player_->getFrameIndex() == 1)
+          if (player_->getFrameIndex() == 1) {
             player_->setFrame(2);
+            Serial.println("Cambio de animación de 1 a 2");
+          }
           else {
             player_->setFrame(0);
             gameState_ = GAMESTATE_PLAYING;
+            Serial.println("Cambio de animación de 2 a 0");
           }
         }
       } else if (playerVelX_ != 0) {
@@ -502,9 +505,8 @@ struct GameScene : public Scene {
       }
  
     }
- 
     DisplayController.refreshSprites();
-
+    Serial.println("Update terminado");
   }
  
   // player shoots
@@ -559,13 +561,14 @@ struct GameScene : public Scene {
       damageShield(sB, collisionPoint);
       sB->allowDraw = true;
     }
-    if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER) {
+    if (gameState_ == GAMESTATE_PLAYING) {
       // enemies fire hits player
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       --lives_;
       gameState_ = lives_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
       player_->setFrame(1);
       showLives();
+      Serial.println("Emitiendo colisión fuego jugador");
     }
     if (sB->type == TYPE_ENEMYMOTHER) {
       // player fire hits enemy mother ship
@@ -576,6 +579,7 @@ struct GameScene : public Scene {
       score_ += sB->enemyPoints;
       updateScore_ = true;
     }
+    Serial.println("Colisiones procesadas");
   }
  
 };
@@ -591,19 +595,18 @@ int GameScene::score_   = 0;
  
 void setup()
 {
+  Serial.begin(115200);
   Ps3.begin("78:dd:08:4d:94:a4");
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
- 
+  while(!Ps3.isConnected()) {
+    delay(1000);
+  }
 }
  
  
 void loop()
 {
-  if (GameScene::level_ == 1) {
-    IntroScene introScene;
-    introScene.start();
-  }
   GameScene gameScene;
   gameScene.start();
 }
