@@ -106,10 +106,6 @@ struct IntroScene : public Scene {
 
  
       // handle keyboard or mouse (after two seconds)
-      if (updateCount > 50) {
-        if (Ps3.event.button_down.start)
-        starting_ = true; 
-      }
     }
   }
  
@@ -499,7 +495,7 @@ struct GameScene : public Scene {
         player_->setFrame( player_->getFrameIndex() == 1 ? 2 : 1);
  
   
-      if (Ps3.event.button_down.cross) {
+      if (true) {
         stop();
         DisplayController.removeSprites();
       }
