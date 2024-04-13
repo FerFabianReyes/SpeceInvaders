@@ -35,80 +35,6 @@ struct IntroScene : public Scene {
   {
   }
  
-  void init()
-  {
-    canvas.setBrushColor(Color::Black);
-    canvas.clear();
-    canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
-    canvas.selectFont(&fabgl::FONT_8x8);
-    canvas.setPenColor(Color::BrightWhite);
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
-    canvas.drawText(50, 15, "SPACE INVADERS");
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
- 
-    canvas.setPenColor(Color::Cyan);
-    canvas.drawText(80, 40, "con ESP32 por FIE");
-    canvas.drawText(30, 55, "Facultad de Ingenieria Electrica.");
- 
-    canvas.setPenColor(Color::Yellow);
-    canvas.setBrushColor(0, 0, 0);
-    canvas.fillRectangle(70, 92, 240, 110);
-    canvas.drawRectangle(70, 92, 240, 110);
-    canvas.setPenColor(Color::Yellow);
-    canvas.drawText(72, 97, "  Tabla de puntajes  ");
-    canvas.drawBitmap(TEXT_X - 40 - 2, TEXT_Y - 2, &bmpEnemyD);
-    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 10, &bmpEnemyA[0]);
-    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 25, &bmpEnemyB[0]);
-    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 40, &bmpEnemyC[0]);
- 
-    canvas.setBrushColor(Color::Black);
-
- 
- 
-    music_ = soundGenerator.playSamples(themeSoundSamples, sizeof(themeSoundSamples), 100, -1);
-  }
- 
-  void update(int updateCount)
-  {
-    static const char * scoreText[] = {"= ? MISTERIOSO", "= 30 PUNTOS", "= 20 PUNTOS", "= 10 PUNTOS" };
- 
-
-
-    if (starting_) {
- 
-      if (starting_ > 50) {
-        // stop music
-        soundGenerator.detach(music_);
-        // stop scene
-        stop();
-      }
- 
-      ++starting_;
-      canvas.scroll(0, -5);
- 
-    } else {
-      if (updateCount > 30 && updateCount % 5 == 0 && textRow_ < 4) {
-        int x = TEXT_X + textCol_ * canvas.getFontInfo()->width - 9;
-        int y = TEXT_Y + textRow_ * 15 - 4;
-        canvas.setPenColor(Color::White);
-        canvas.drawChar(x, y, scoreText[textRow_][textCol_]);
-        ++textCol_;
-        if (scoreText[textRow_][textCol_] == 0) {
-          textCol_ = 0;
-          ++textRow_;
-        }
-      }
- 
-       if (updateCount % 20 == 0) {
-        canvas.setPenColor(51, random(255), random(255));
-        canvas.drawText(50, 75, "Presiona [START] para jugar");
-      }
-
- 
-      // handle keyboard or mouse (after two seconds)
-    }
-  }
- 
   void collisionDetected(Sprite * spriteA, Sprite * spriteB, Point collisionPoint)
   {
   }
@@ -192,11 +118,6 @@ struct GameScene : public Scene {
   bool updateScore_        = true;
   int64_t pauseStart_;
  
-  Bitmap bmpShield[4] = { Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
-                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
-                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true),
-                          Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(0, 255, 0), true), };
- 
   GameScene()
     : Scene(SPRITESCOUNT, 20, DisplayController.getViewPortWidth(), DisplayController.getViewPortHeight())
   {
@@ -229,12 +150,7 @@ struct GameScene : public Scene {
     playerFire_->type = TYPE_PLAYERFIRE;
     addSprite(playerFire_);
     // setup shields
-    for (int i = 0; i < 4; ++i) {
-      shields_[i].addBitmap(&bmpShield[i])->moveTo(35 + i * 75, 150);
-      shields_[i].isStatic = true;
-      shields_[i].type = TYPE_SHIELD;
-      addSprite(&shields_[i]);
-    }
+
     // setup enemies
     for (int i = 0; i < ROWENEMIESCOUNT; ++i) {
       initEnemy( enemiesR1_[i].addBitmap(&bmpEnemyA[0])->addBitmap(&bmpEnemyA[1]), 30 );
@@ -262,34 +178,7 @@ struct GameScene : public Scene {
 
     canvas.setBrushColor(Color::Black);
     canvas.clear();
- 
-    canvas.setPenColor(Color::Green);
-    canvas.drawLine(0, 180, 320, 180);
- 
 
-    canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
-    canvas.selectFont(&fabgl::FONT_4x6);
-    canvas.setPenColor(Color::White);
-    canvas.drawText(110, 20, "Bienvenido al espacio");
-    canvas.selectFont(&fabgl::FONT_8x8);
-    canvas.setPenColor(0, 255, 255);
-    canvas.drawText(2, 2, "SCORE");
-    canvas.setPenColor(0, 0, 255);
-    canvas.drawText(254, 2, "HI-SCORE");
-    canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(254, 181, "Nivel %02d", level_);
- 
-    showLives();
-  }
- 
-  void drawScore()
-  {
-    canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(2, 14, "%05d", score_);
-    if (score_ > hiScore_)
-      hiScore_ = score_;
-    canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(266, 14, "%05d", hiScore_);
   }
  
   void moveEnemy(SISprite * enemy, int x, int y, bool * touchSide)
@@ -312,45 +201,15 @@ struct GameScene : public Scene {
     // disable enemies drawing, so text can be over them
     for (int i = 0; i < ROWENEMIESCOUNT * 5; ++i)
       enemies_[i].allowDraw = false;
-    // show game over
-    canvas.setPenColor(0, 255, 0);
-    canvas.setBrushColor(0, 0, 0);
-    canvas.fillRectangle(40, 60, 270, 130);
-    canvas.drawRectangle(40, 60, 270, 130);
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
-    canvas.setPenColor(255, 255, 255);
-    canvas.drawText(55, 80, "FIN DEL JUEGO");
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
-    canvas.setPenColor(0, 255, 0);
-    canvas.drawText(110, 100, "Presiona [X]");
-    // change state
+
     gameState_ = GAMESTATE_GAMEOVER;
     level_ = 1;
     lives_ = 3;
     score_ = 0;
   }
- 
-  void levelChange()
-  {
-    ++level_;
-    // show game over
-    canvas.setPenColor(0, 255, 0);
-    canvas.drawRectangle(80, 80, 240, 110);
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
-    canvas.drawTextFmt(105, 88, "NIVEL %d", level_);
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
-    // change state
-    gameState_  = GAMESTATE_LEVELCHANGED;
-    pauseStart_ = esp_timer_get_time();
-  }
- 
+
   void update(int updateCount)
   {
- 
-    if (updateScore_) {
-      updateScore_ = false;
-      drawScore();
-    }
  
     if (gameState_ == GAMESTATE_PLAYING || gameState_ == GAMESTATE_PLAYERKILLED) {
  
@@ -423,15 +282,7 @@ struct GameScene : public Scene {
         player_->x = iclamp(player_->x, 0, getWidth() - player_->getWidth());
         updateSprite(player_);
       } 
- 
-      // move player fire
-      if (playerFire_->visible) {
-        playerFire_->y -= 3;
-        if (playerFire_->y < ENEMIES_START_Y)
-          playerFire_->visible = false;
-        else
-          updateSpriteAndDetectCollisions(playerFire_);
-      }
+
  
       // move enemies fire
       if (enemiesFire_->visible) {
@@ -441,23 +292,6 @@ struct GameScene : public Scene {
           enemiesFire_->visible = false;
         else
           updateSpriteAndDetectCollisions(enemiesFire_);
-      }
- 
-      // move enemy mother ship
-      if (enemyMother_->visible && enemyMother_->getFrameIndex() == 0) {
-        enemyMother_->x -= 1;
-        if (enemyMother_->x < -enemyMother_->getWidth())
-          enemyMother_->visible = false;
-        else
-          updateSprite(enemyMother_);
-      }
- 
-      // start enemy mother ship
-      if ((updateCount % 800) == 0) {
-        soundGenerator.playSamples(motherShipSoundSamples, sizeof(motherShipSoundSamples), 100, 7000);
-        enemyMother_->x = getWidth();
-        enemyMother_->setFrame(0);
-        enemyMother_->visible = true;
       }
  
       //Uso del control de PS3. 
@@ -471,17 +305,12 @@ struct GameScene : public Scene {
       else {
         playerVelX_ = 0;
       }
-
-
-      if (abs(Ps3.event.analog_changed.button.cross) && !playerFire_->visible)  // player fire?
-          fire(); 
-      }
  
     if (gameState_ == GAMESTATE_ENDGAME)
       gameOver();
  
     if (gameState_ == GAMESTATE_LEVELCHANGING)
-      levelChange();
+      //levelChange();
  
     if (gameState_ == GAMESTATE_LEVELCHANGED && esp_timer_get_time() >= pauseStart_ + 2500000) {
       stop(); // restart from next level
@@ -504,36 +333,8 @@ struct GameScene : public Scene {
     DisplayController.refreshSprites();
     Serial.println("Update terminado");
   }
- 
-  // player shoots
-  void fire()
-  {
-    playerFire_->moveTo(player_->x + 7, player_->y - 1)->visible = true;
-    soundGenerator.playSamples(fireSoundSamples, sizeof(fireSoundSamples));
   }
- 
-  // shield has been damaged
-  void damageShield(SISprite * shield, Point collisionPoint)
-  {
-    Bitmap * shieldBitmap = shield->getFrame();
-    int x = collisionPoint.X - shield->x;
-    int y = collisionPoint.Y - shield->y;
-    shieldBitmap->setPixel(x, y, 0);
-    for (int i = 0; i < 32; ++i) {
-      int px = iclamp(x + random(-4, 5), 0, shield->getWidth() - 1);
-      int py = iclamp(y + random(-4, 5), 0, shield->getHeight() - 1);
-      shieldBitmap->setPixel(px, py, 0);
-    }
-  }
- 
-  void showLives()
-  {
-    canvas.fillRectangle(1, 181, 100, 195);
-    canvas.setPenColor(Color::White);
-    canvas.drawTextFmt(5, 181, "%d", lives_);
-    for (int i = 0; i < lives_; ++i)
-      canvas.drawBitmap(15 + i * (bmpPlayer.width + 5), 183, &bmpPlayer);
-  }
+
  
   void collisionDetected(Sprite * spriteA, Sprite * spriteB, Point collisionPoint)
   {
@@ -551,19 +352,12 @@ struct GameScene : public Scene {
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
     }
-    if (sB->type == TYPE_SHIELD) {
-      // something hits a shield
-      sA->visible = false;
-      damageShield(sB, collisionPoint);
-      sB->allowDraw = true;
-    }
     if (gameState_ == GAMESTATE_PLAYING) {
       // enemies fire hits player
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       --lives_;
       gameState_ = lives_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
       player_->setFrame(1);
-      showLives();
       Serial.println("Emitiendo colisión fuego jugador");
     }
     if (sB->type == TYPE_ENEMYMOTHER) {
