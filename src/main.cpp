@@ -74,6 +74,8 @@ struct GameScene : public Scene {
   static int score_;
   static int level_;
   static int hiScore_;
+  bool cambio = false;
+  bool cambio2 = false;
  
   SISprite * sprites_     = new SISprite[SPRITESCOUNT];
   SISprite * player_      = sprites_;
@@ -266,9 +268,13 @@ struct GameScene : public Scene {
       if (gameState_ == GAMESTATE_PLAYERKILLED) {
         // animate player explosion or restart playing other lives
         if ((updateCount % 20) == 0) {
-          if (player_->getFrameIndex() == 1) {
+          if (cambio) {
+            player_->setFrame(1);
+            Serial.println("Cambio de animación de 0 a 1");
+            cambio2 = true;
+          } else if(cambio2){
             player_->setFrame(2);
-            Serial.println("Cambio de animación de 1 a 2");
+            Serial.println("Cambio de la amimación de 1 a 2");
           }
           else {
             player_->setFrame(0);
@@ -357,8 +363,7 @@ struct GameScene : public Scene {
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       --lives_;
       gameState_ = lives_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
-      player_->setFrame(1);
-      Serial.println("Emitiendo colisión fuego jugador");
+      cambio = true;
     }
     if (sB->type == TYPE_ENEMYMOTHER) {
       // player fire hits enemy mother ship
