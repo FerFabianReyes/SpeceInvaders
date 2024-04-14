@@ -13,111 +13,6 @@ using fabgl::iclamp;
 fabgl::VGAController DisplayController;
 fabgl::Canvas        canvas(&DisplayController);
 SoundGenerator       soundGenerator;
-
-
-// IntroScene
- 
-struct IntroScene : public Scene {
- 
-  static const int TEXTROWS = 4;
-  static const int TEXT_X   = 130;
-  static const int TEXT_Y   = 122;
- 
- 
-  int textRow_  = 0;
-  int textCol_  = 0;
-  int starting_ = 0;
- 
-  SamplesGenerator * music_ = nullptr;
- 
-  IntroScene()
-    : Scene(0, 20, DisplayController.getViewPortWidth(), DisplayController.getViewPortHeight())
-  {
-  }
- 
-  void init()
-  {
-    canvas.setBrushColor(Color::Black);
-    canvas.clear();
-    canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
-    canvas.selectFont(&fabgl::FONT_8x8);
-    canvas.setPenColor(Color::BrightWhite);
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
-    canvas.drawText(50, 15, "SPACE INVADERS");
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
- 
-    canvas.setPenColor(Color::Cyan);
-    canvas.drawText(80, 40, "con ESP32 por FIE");
-    canvas.drawText(30, 55, "Facultad de Ingenieria Electrica.");
- 
-    canvas.setPenColor(Color::Yellow);
-    canvas.setBrushColor(0, 0, 0);
-    canvas.fillRectangle(70, 92, 240, 110);
-    canvas.drawRectangle(70, 92, 240, 110);
-    canvas.setPenColor(Color::Yellow);
-    canvas.drawText(72, 97, "  Tabla de puntajes  ");
-    canvas.drawBitmap(TEXT_X - 40 - 2, TEXT_Y - 2, &bmpEnemyD);
-    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 10, &bmpEnemyA[0]);
-    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 25, &bmpEnemyB[0]);
-    canvas.drawBitmap(TEXT_X - 40, TEXT_Y + 40, &bmpEnemyC[0]);
- 
-    canvas.setBrushColor(Color::Black);
-
- 
- 
-    music_ = soundGenerator.playSamples(themeSoundSamples, sizeof(themeSoundSamples), 100, -1);
-  }
- 
-  void update(int updateCount)
-  {
-    static const char * scoreText[] = {"= ? MISTERIOSO", "= 30 PUNTOS", "= 20 PUNTOS", "= 10 PUNTOS" };
- 
-
-
-    if (starting_) {
- 
-      if (starting_ > 50) {
-        // stop music
-        soundGenerator.detach(music_);
-        // stop scene
-        stop();
-      }
- 
-      ++starting_;
-      canvas.scroll(0, -5);
- 
-    } else {
-      if (updateCount > 30 && updateCount % 5 == 0 && textRow_ < 4) {
-        int x = TEXT_X + textCol_ * canvas.getFontInfo()->width - 9;
-        int y = TEXT_Y + textRow_ * 15 - 4;
-        canvas.setPenColor(Color::White);
-        canvas.drawChar(x, y, scoreText[textRow_][textCol_]);
-        ++textCol_;
-        if (scoreText[textRow_][textCol_] == 0) {
-          textCol_ = 0;
-          ++textRow_;
-        }
-      }
- 
-       if (updateCount % 20 == 0) {
-        canvas.setPenColor(51, random(255), random(255));
-        canvas.drawText(50, 75, "Presiona [START] para jugar");
-      }
-
- 
-      // handle keyboard or mouse (after two seconds)
-      if (updateCount > 50) {
-        if (Ps3.event.button_down.start)
-        starting_ = true; 
-      }
-    }
-  }
- 
-  void collisionDetected(Sprite * spriteA, Sprite * spriteB, Point collisionPoint)
-  {
-  }
- 
-};
  
 // GameScene
 struct GameScene : public Scene {
@@ -169,17 +64,6 @@ struct GameScene : public Scene {
   int playerVelX_          = 0;  // 0 = no move
   int enemiesX_            = ENEMIES_START_X;
   int enemiesY_            = ENEMIES_START_Y;
- 
-  // enemiesDir_
-  //   bit 0 : if 1 moving left
-  //   bit 1 : if 1 moving right
-  //   bit 2 : if 1 moving down
-  //   bit 3 : if 0 before was moving left, if 1 before was moving right
-  // Allowed cases:
-  //   1  = moving left
-  //   2  = moving right
-  //   4  = moving down (before was moving left)
-  //   12 = moving down (before was moving right)
  
   static constexpr int ENEMY_MOV_LEFT              = 1;
   static constexpr int ENEMY_MOV_RIGHT             = 2;
@@ -499,14 +383,14 @@ struct GameScene : public Scene {
         player_->setFrame( player_->getFrameIndex() == 1 ? 2 : 1);
  
   
-      if (Ps3.event.button_down.cross) {
+            /* Modificado para que en cuanto muera se repita. */
+      if (true) {
         stop();
         DisplayController.removeSprites();
       }
  
     }
     DisplayController.refreshSprites();
-    Serial.println("Update terminado");
   }
  
   // player shoots
@@ -555,12 +439,6 @@ struct GameScene : public Scene {
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
     }
-    if (sB->type == TYPE_SHIELD) {
-      // something hits a shield
-      sA->visible = false;
-      damageShield(sB, collisionPoint);
-      sB->allowDraw = true;
-    }
     if (gameState_ == GAMESTATE_PLAYING) {
       // enemies fire hits player
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
@@ -569,6 +447,12 @@ struct GameScene : public Scene {
       player_->setFrame(1);
       showLives();
       Serial.println("Emitiendo colisión fuego jugador");
+    }
+    if (sB->type == TYPE_SHIELD) {
+      // something hits a shield
+      sA->visible = false;
+      damageShield(sB, collisionPoint);
+      sB->allowDraw = true;
     }
     if (sB->type == TYPE_ENEMYMOTHER) {
       // player fire hits enemy mother ship
@@ -596,7 +480,7 @@ int GameScene::score_   = 0;
 void setup()
 {
   Serial.begin(115200);
-  Ps3.begin("78:dd:08:4d:94:a4");
+  Ps3.begin("24:6f:28:af:1c:66");
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
   while(!Ps3.isConnected()) {
