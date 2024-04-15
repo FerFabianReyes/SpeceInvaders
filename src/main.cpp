@@ -154,12 +154,12 @@ struct GameScene : public Scene
   };
 
   static const int PLAYERSCOUNT = 1;
-  static const int SHIELDSCOUNT = 4;
+  static const int SHIELDSCOUNT = 3;
   static const int ROWENEMIESCOUNT = 11;
   static const int PLAYERFIRECOUNT = 1;
   static const int ENEMIESFIRECOUNT = 1;
   static const int ENEMYMOTHERCOUNT = 1;
-  static const int SPRITESCOUNT = 2 * PLAYERSCOUNT + SHIELDSCOUNT + 5 * ROWENEMIESCOUNT + 2 * PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
+  static const int SPRITESCOUNT = 2 * PLAYERSCOUNT + SHIELDSCOUNT + 3 * ROWENEMIESCOUNT + 2 * PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
 
   static const int ENEMIES_X_SPACE = 16; // Espacio entre enemigos
   static const int ENEMIES_Y_SPACE = 10;
@@ -171,8 +171,6 @@ struct GameScene : public Scene
   static const int PLAYER_Y = 170;
   static const int PLAYER2_Y = 170;
 
-  static int lives_;
-  static int livesPl2_;
   static int score_;
   static int level_;
   static int hiScore_;
@@ -185,9 +183,7 @@ struct GameScene : public Scene
   SISprite *enemiesR1_ = enemies_;
   SISprite *enemiesR2_ = enemiesR1_ + ROWENEMIESCOUNT;
   SISprite *enemiesR3_ = enemiesR2_ + ROWENEMIESCOUNT;
-  SISprite *enemiesR4_ = enemiesR3_ + ROWENEMIESCOUNT;
-  SISprite *enemiesR5_ = enemiesR4_ + ROWENEMIESCOUNT;
-  SISprite *playerFire_ = enemiesR5_ + ROWENEMIESCOUNT;
+  SISprite *playerFire_ = enemiesR3_ + ROWENEMIESCOUNT;
   SISprite *playerFire2_ = playerFire_ + PLAYERFIRECOUNT;
   SISprite *enemiesFire_ = playerFire2_ + PLAYERFIRECOUNT;
 
@@ -216,7 +212,7 @@ struct GameScene : public Scene
 
   int enemiesDir_ = ENEMY_MOV_RIGHT;
 
-  int enemiesAlive_ = ROWENEMIESCOUNT * 5;
+  int enemiesAlive_ = ROWENEMIESCOUNT * 3;
   int enemiesSoundCount_ = 0;
   SISprite *lastHitEnemy_ = nullptr;
   GameState gameState_ = GAMESTATE_PLAYING;
@@ -224,8 +220,7 @@ struct GameScene : public Scene
   bool updateScore_ = true;
   int64_t pauseStart_;
 
-  Bitmap bmpShield[4] = {
-      Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(47, 93, 130), true),
+  Bitmap bmpShield[3] = {
       Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(47, 93, 130), true),
       Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(47, 93, 130), true),
       Bitmap(22, 16, shield_data, PixelFormat::Mask, RGB888(47, 93, 130), true),
@@ -273,13 +268,12 @@ struct GameScene : public Scene
     playerFire2_->addBitmap(&bmpPlayerFire2);
     playerFire2_->visible = false;
     playerFire2_->type = TYPE_PLAYERFIRE2;
-    
     addSprite(playerFire2_);
 
     // setup shields
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 3; ++i)
     {
-      shields_[i].addBitmap(&bmpShield[i])->moveTo(35 + i * 75, 150);
+      shields_[i].addBitmap(&bmpShield[i])->moveTo(70 + i * 75, 150);
       shields_[i].isStatic = true;
       shields_[i].type = TYPE_SHIELD;
       addSprite(&shields_[i]);
@@ -289,9 +283,7 @@ struct GameScene : public Scene
     {
       initEnemy(enemiesR1_[i].addBitmap(&bmpEnemyA[0])->addBitmap(&bmpEnemyA[1]), 30);
       initEnemy(enemiesR2_[i].addBitmap(&bmpEnemyB[0])->addBitmap(&bmpEnemyB[1]), 20);
-      initEnemy(enemiesR3_[i].addBitmap(&bmpEnemyB[0])->addBitmap(&bmpEnemyB[1]), 20);
-      initEnemy(enemiesR4_[i].addBitmap(&bmpEnemyC[0])->addBitmap(&bmpEnemyC[1]), 10);
-      initEnemy(enemiesR5_[i].addBitmap(&bmpEnemyC[0])->addBitmap(&bmpEnemyC[1]), 10);
+      initEnemy(enemiesR3_[i].addBitmap(&bmpEnemyC[0])->addBitmap(&bmpEnemyC[1]), 20);
     }
     // setup enemies fire
     enemiesFire_->addBitmap(&bmpEnemiesFire[0])->addBitmap(&bmpEnemiesFire[1]);
@@ -326,8 +318,8 @@ struct GameScene : public Scene
     canvas.setPenColor(255, 255, 255);
     canvas.drawTextFmt(256, 181, "Nivel %02d", level_);
 
-    showLives();
   }
+
 
   void drawScore()
   {
@@ -375,7 +367,6 @@ struct GameScene : public Scene
     // change state
     gameState_ = GAMESTATE_GAMEOVER;
     level_ = 1;
-    lives_ = 3;
     score_ = 0;
   }
 
@@ -402,7 +393,7 @@ struct GameScene : public Scene
       drawScore();
     }
 
-    if (gameState_ == GAMESTATE_PLAYING || gameState_ == GAMESTATE_PLAYERKILLED)
+    if (gameState_ == GAMESTATE_PLAYING || gameState_ == GAMESTATE_PLAYERKILLED || gameState_ == GAMESTATE_PLAYER2KILLED)
     {
 
       // move enemies and shoot
@@ -423,8 +414,6 @@ struct GameScene : public Scene
           moveEnemy(&enemiesR1_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 0 * ENEMIES_Y_SPACE, &touchSide);
           moveEnemy(&enemiesR2_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 1 * ENEMIES_Y_SPACE, &touchSide);
           moveEnemy(&enemiesR3_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 2 * ENEMIES_Y_SPACE, &touchSide);
-          moveEnemy(&enemiesR4_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 3 * ENEMIES_Y_SPACE, &touchSide);
-          moveEnemy(&enemiesR5_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 4 * ENEMIES_Y_SPACE, &touchSide);
         }
         switch (enemiesDir_)
         {
@@ -446,7 +435,7 @@ struct GameScene : public Scene
         if (!enemiesFire_->visible)
         {
           int shottingEnemy = random(enemiesAlive_);
-          for (int i = 0, a = 0; i < ROWENEMIESCOUNT * 5; ++i)
+          for (int i = 0, a = 0; i < ROWENEMIESCOUNT * 3; ++i)
           {
             if (enemies_[i].visible)
             {
@@ -463,18 +452,13 @@ struct GameScene : public Scene
         }
       }
 
-      if (gameState_ == GAMESTATE_PLAYER2KILLED)
+     if (gameState_ == GAMESTATE_PLAYER2KILLED)
       {
-        // animate player explosion or restart playing other lives
         if ((updateCount % 20) == 0)
         {
-          if (player2_->getFrameIndex() == 1)
+          if (gameState_ == GAMESTATE_PLAYER2KILLED)
           {
-            player2_->setFrame(2);
-          }
-          else
-          {
-            player2_->setFrame(0);
+            player2_->visible = true;
             gameState_ = GAMESTATE_PLAYING;
           }
         }
@@ -484,19 +468,15 @@ struct GameScene : public Scene
         // animate player explosion or restart playing other lives
         if ((updateCount % 20) == 0)
         {
-          if (player_->getFrameIndex() == 1)
+          if (gameState_ == GAMESTATE_PLAYER2KILLED)
           {
-            player_->setFrame(2);
-          }
-          else
-          {
-            player_->setFrame(0);
+            player2_->visible = true;
             gameState_ = GAMESTATE_PLAYING;
           }
         }
       } else if (playerVelX_ != 0 || player2VelX_ != 0)
       {
-        // move player using PS3
+        // Movimiento de la posición
         player_->x += playerVelX_;
         player_->x = iclamp(player_->x, 0, getWidth() - player_->getWidth());
         updateSprite(player_);
@@ -656,17 +636,6 @@ struct GameScene : public Scene
     }
   }
 
-  void showLives()
-  {
-    canvas.fillRectangle(1, 181, 100, 195);
-    canvas.setPenColor(Color::White);
-    canvas.drawTextFmt(5, 181, "%d", lives_);
-    for (int i = 0; i < lives_; ++i)
-    {
-      canvas.drawBitmap(15 + i * (bmpPlayer.width + 5), 183, &bmpPlayer);
-    }
-  }
-
   void collisionDetected(Sprite *spriteA, Sprite *spriteB, Point collisionPoint)
   {
     SISprite *sA = (SISprite *)spriteA;
@@ -684,6 +653,7 @@ struct GameScene : public Scene
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
     }
+ 
     if (sB->type == TYPE_SHIELD)
     {
       // something hits a shield
@@ -691,14 +661,13 @@ struct GameScene : public Scene
       damageShield(sB, collisionPoint);
       sB->allowDraw = true;
     }
+
     if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER)
     {
-      // enemies fire hits player
+      // Golpe del enemigo
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
-      --lives_;
-      gameState_ = lives_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
-      player_->setFrame(1);
-      showLives();
+      gameState_ = GAMESTATE_PLAYERKILLED;
+      player_->visible = false;
     }
      if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
     {
@@ -716,12 +685,24 @@ struct GameScene : public Scene
 
     if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
     {
-      // enemies fire hits player
+      //  Golpe de enemigo
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
-      --livesPl2_;
-      gameState_ = livesPl2_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
-      player2_->setFrame(1);
-      showLives();
+      gameState_ = GAMESTATE_PLAYER2KILLED;
+      player_->visible = false;
+    }
+
+    if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
+    {
+      // player fire hits an enemy
+      soundGenerator.playSamples(shootSoundSamples, sizeof(shootSoundSamples));
+      sA->visible = false;
+      sB->setFrame(2);
+      lastHitEnemy_ = sB;
+      --enemiesAlive_;
+      score_ += sB->enemyPoints;
+      updateScore_ = true;
+      if (enemiesAlive_ == 0)
+        gameState_ = GAMESTATE_LEVELCHANGING;
     }
 
     if (sB->type == TYPE_ENEMYMOTHER)
@@ -739,12 +720,13 @@ struct GameScene : public Scene
 
 int GameScene::hiScore_ = 0;
 int GameScene::level_ = 1;
-int GameScene::lives_ = 3;
 int GameScene::score_ = 0;
 
 void setup()
 {
-  Ps3.begin("24:6f:28:af:1c:66");
+  //78:dd:08:4d:94:a4
+  //24:6f:28:af:1c:66
+  Ps3.begin("78:dd:08:4d:94:a4");
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
