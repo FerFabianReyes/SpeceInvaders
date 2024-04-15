@@ -11,6 +11,10 @@ fabgl::VGAController DisplayController;
 fabgl::Canvas canvas(&DisplayController);
 SoundGenerator soundGenerator;
 
+//Las variables van a ser globales para que no cause proplema
+    const unsigned long TIEMPO_LIMITE = 90;
+    const unsigned long TiempoInicio = 0;
+
 // IntroScene
 
 struct IntroScene : public Scene
@@ -123,6 +127,7 @@ struct GameScene : public Scene
   enum SpriteType
   {
     TYPE_PLAYERFIRE,
+    TYPE_PLAYERFIRE2,
     TYPE_ENEMIESFIRE,
     TYPE_ENEMY,
     TYPE_PLAYER,
@@ -185,6 +190,7 @@ struct GameScene : public Scene
   SISprite *playerFire_ = enemiesR5_ + ROWENEMIESCOUNT;
   SISprite *playerFire2_ = playerFire_ + PLAYERFIRECOUNT;
   SISprite *enemiesFire_ = playerFire2_ + PLAYERFIRECOUNT;
+
   SISprite *enemyMother_ = enemiesFire_ + ENEMIESFIRECOUNT;
 
   int playerVelX_ = 0; // 0 = no move
@@ -255,6 +261,7 @@ struct GameScene : public Scene
     playerFire_->addBitmap(&bmpPlayerFire);
     playerFire_->visible = false;
     playerFire_->type = TYPE_PLAYERFIRE;
+    //playerFire_->type = TYPE_PLAYERFIRE2;
     addSprite(playerFire_);
 
     // setup player 2
@@ -265,7 +272,8 @@ struct GameScene : public Scene
     // setup player fire 2
     playerFire2_->addBitmap(&bmpPlayerFire2);
     playerFire2_->visible = false;
-    playerFire2_->type = TYPE_PLAYERFIRE;
+    playerFire2_->type = TYPE_PLAYERFIRE2;
+    
     addSprite(playerFire2_);
 
     // setup shields
@@ -692,8 +700,21 @@ struct GameScene : public Scene
       player_->setFrame(1);
       showLives();
     }
+     if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
+    {
+      // player fire hits an enemy
+      soundGenerator.playSamples(shootSoundSamples, sizeof(shootSoundSamples));
+      sA->visible = false;
+      sB->setFrame(2);
+      lastHitEnemy_ = sB;
+      --enemiesAlive_;
+      score_ += sB->enemyPoints;
+      updateScore_ = true;
+      if (enemiesAlive_ == 0)
+        gameState_ = GAMESTATE_LEVELCHANGING;
+    }
 
-    /*if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
+    if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
     {
       // enemies fire hits player
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
@@ -701,7 +722,7 @@ struct GameScene : public Scene
       gameState_ = livesPl2_ ? GAMESTATE_PLAYERKILLED : GAMESTATE_ENDGAME;
       player2_->setFrame(1);
       showLives();
-    }*/
+    }
 
     if (sB->type == TYPE_ENEMYMOTHER)
     {
@@ -727,14 +748,46 @@ void setup()
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
+ void mostrarMensajeTiempoAgotado() {
+  // Borra la pantalla, lo que este ahi
+  canvas.setBrushColor(Color::Black);
+  canvas.clear();
+
+  // Configura el color y la fuente del mensaje
+  canvas.setPenColor(Color::White);
+  canvas.selectFont(&fabgl::FONT_8x8);
+
+  // Muestra el mensaje en el centro de la pantalla
+  canvas.drawText(50, 100, "¡Tiempo agotadoo!");
+}
+
 
 void loop()
 {
-  if (GameScene::level_ == 1)
-  {
-    IntroScene introScene;
-    introScene.start();
-  }
-  GameScene gameScene;
-  gameScene.start();
+    // Inicia el tiempo
+    unsigned long TiempoInicio = millis();
+
+    // Inicia la escena de introducción solo en el primer nivel
+    if (GameScene::level_ == 1) {
+        IntroScene introScene;
+        introScene.start();
+    }
+
+    GameScene gameScene;
+    gameScene.start();
+
+    // Bucle para verificar el tiempo transcurrido y detener el juego si es necesario
+    
+        // Calcula el tiempo transcurrido
+        unsigned long TiempoTranscurrido = (millis() - TiempoInicio) / 1000;
+        if (TiempoTranscurrido >= TIEMPO_LIMITE) {
+            // Mostrar mensaje de tiempo agotado
+            mostrarMensajeTiempoAgotado();
+
+            // Detener el juego
+            // Puedes agregar aquí la lógica para detener el juego adecuadamente
+            //break; // Salir del bucle de verificación de tiempo
+        
+        // Actualiza el juego u otras operaciones si es necesario
+    }
 }
