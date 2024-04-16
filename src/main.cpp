@@ -273,7 +273,7 @@ struct GameScene : public Scene
     // setup shields
     for (int i = 0; i < 3; ++i)
     {
-      shields_[i].addBitmap(&bmpShield[i])->moveTo(70 + i * 75, 150);
+      shields_[i].addBitmap(&bmpShield[i])->moveTo(71 + i * 75, 150);
       shields_[i].isStatic = true;
       shields_[i].type = TYPE_SHIELD;
       addSprite(&shields_[i]);
@@ -452,9 +452,11 @@ struct GameScene : public Scene
         }
       }
 
-     if (gameState_ == GAMESTATE_PLAYER2KILLED)
+    bool parpadeo = false;
+    if (gameState_ == GAMESTATE_PLAYER2KILLED)
       {
-        if ((updateCount % 20) == 0)
+        parpadeo = true;
+        if ((updateCount % 30) == 0)
         {
           if (gameState_ == GAMESTATE_PLAYER2KILLED)
           {
@@ -465,12 +467,11 @@ struct GameScene : public Scene
       }
       else if (gameState_ == GAMESTATE_PLAYERKILLED)
       {
-        // animate player explosion or restart playing other lives
-        if ((updateCount % 20) == 0)
+        if ((updateCount % 30) == 0)
         {
-          if (gameState_ == GAMESTATE_PLAYER2KILLED)
+          if (gameState_ == GAMESTATE_PLAYERKILLED)
           {
-            player2_->visible = true;
+            player_->visible = true;
             gameState_ = GAMESTATE_PLAYING;
           }
         }
@@ -669,6 +670,16 @@ struct GameScene : public Scene
       gameState_ = GAMESTATE_PLAYERKILLED;
       player_->visible = false;
     }
+
+    
+    if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
+    {
+      //  Golpe de enemigo
+      soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
+      gameState_ = GAMESTATE_PLAYER2KILLED;
+      player2_->visible = false;
+    }
+
      if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
     {
       // player fire hits an enemy
@@ -681,14 +692,6 @@ struct GameScene : public Scene
       updateScore_ = true;
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
-    }
-
-    if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
-    {
-      //  Golpe de enemigo
-      soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
-      gameState_ = GAMESTATE_PLAYER2KILLED;
-      player_->visible = false;
     }
 
     if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
@@ -730,25 +733,10 @@ void setup()
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
- void mostrarMensajeTiempoAgotado() {
-  // Borra la pantalla, lo que este ahi
-  canvas.setBrushColor(Color::Black);
-  canvas.clear();
-
-  // Configura el color y la fuente del mensaje
-  canvas.setPenColor(Color::White);
-  canvas.selectFont(&fabgl::FONT_8x8);
-
-  // Muestra el mensaje en el centro de la pantalla
-  canvas.drawText(50, 100, "¡Tiempo agotadoo!");
-}
 
 
 void loop()
 {
-    // Inicia el tiempo
-    unsigned long TiempoInicio = millis();
-
     // Inicia la escena de introducción solo en el primer nivel
     if (GameScene::level_ == 1) {
         IntroScene introScene;
@@ -757,19 +745,4 @@ void loop()
 
     GameScene gameScene;
     gameScene.start();
-
-    // Bucle para verificar el tiempo transcurrido y detener el juego si es necesario
-    
-        // Calcula el tiempo transcurrido
-        unsigned long TiempoTranscurrido = (millis() - TiempoInicio) / 1000;
-        if (TiempoTranscurrido >= TIEMPO_LIMITE) {
-            // Mostrar mensaje de tiempo agotado
-            mostrarMensajeTiempoAgotado();
-
-            // Detener el juego
-            // Puedes agregar aquí la lógica para detener el juego adecuadamente
-            //break; // Salir del bucle de verificación de tiempo
-        
-        // Actualiza el juego u otras operaciones si es necesario
-    }
 }
