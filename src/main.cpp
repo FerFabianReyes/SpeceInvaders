@@ -172,8 +172,8 @@ struct GameScene : public Scene
   static const int PLAYER2_Y = 170;
 
   static int score_;
+  static int score2_;
   static int level_;
-  static int hiScore_;
 
   SISprite *sprites_ = new SISprite[SPRITESCOUNT];
   SISprite *player_ = sprites_;
@@ -311,10 +311,10 @@ struct GameScene : public Scene
     canvas.setPenColor(108, 155, 245);
     canvas.drawText(110, 20, "Bienvenidos al espacio");
     canvas.selectFont(&fabgl::FONT_8x8);
-    canvas.setPenColor(69, 142, 237);
-    canvas.drawText(2, 2, "SCORE");
-    canvas.setPenColor(248, 252, 167);
-    canvas.drawText(254, 2, "HI-SCORE");
+    canvas.setPenColor(169, 142, 237);
+    canvas.drawText(2, 2, "Jugador 1");
+    canvas.setPenColor(230, 232, 235);
+    canvas.drawText(244, 2, "Jugador 2");
     canvas.setPenColor(255, 255, 255);
     canvas.drawTextFmt(256, 181, "Nivel %02d", level_);
 
@@ -324,11 +324,9 @@ struct GameScene : public Scene
   void drawScore()
   {
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(2, 14, "%05d", score_);
-    if (score_ > hiScore_)
-      hiScore_ = score_;
+    canvas.drawTextFmt(5, 14, "%05d", score_);
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(266, 14, "%05d", hiScore_);
+    canvas.drawTextFmt(266, 14, "%05d", score2_);
   }
 
   void moveEnemy(SISprite *enemy, int x, int y, bool *touchSide)
@@ -641,19 +639,6 @@ struct GameScene : public Scene
   {
     SISprite *sA = (SISprite *)spriteA;
     SISprite *sB = (SISprite *)spriteB;
-    if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE && sB->type == TYPE_ENEMY)
-    {
-      // player fire hits an enemy
-      soundGenerator.playSamples(shootSoundSamples, sizeof(shootSoundSamples));
-      sA->visible = false;
-      sB->setFrame(2);
-      lastHitEnemy_ = sB;
-      --enemiesAlive_;
-      score_ += sB->enemyPoints;
-      updateScore_ = true;
-      if (enemiesAlive_ == 0)
-        gameState_ = GAMESTATE_LEVELCHANGING;
-    }
  
     if (sB->type == TYPE_SHIELD)
     {
@@ -669,6 +654,13 @@ struct GameScene : public Scene
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       gameState_ = GAMESTATE_PLAYERKILLED;
       player_->visible = false;
+      if (score_ <= 50)
+      {
+        score_ = 0;
+      } else {
+        score_ -= 50;
+      }
+      
     }
 
     
@@ -678,9 +670,16 @@ struct GameScene : public Scene
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       gameState_ = GAMESTATE_PLAYER2KILLED;
       player2_->visible = false;
+
+      if (score2_ <= 50)
+      {
+        score2_ = 0;
+      } else {
+        score2_ -= 50;
+      }
     }
 
-     if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
+     if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE && sB->type == TYPE_ENEMY)
     {
       // player fire hits an enemy
       soundGenerator.playSamples(shootSoundSamples, sizeof(shootSoundSamples));
@@ -702,7 +701,7 @@ struct GameScene : public Scene
       sB->setFrame(2);
       lastHitEnemy_ = sB;
       --enemiesAlive_;
-      score_ += sB->enemyPoints;
+      score2_ += sB->enemyPoints;
       updateScore_ = true;
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
@@ -715,15 +714,21 @@ struct GameScene : public Scene
       sA->visible = false;
       sB->setFrame(1);
       lastHitEnemy_ = sB;
-      score_ += sB->enemyPoints;
+      if (sA->type == TYPE_PLAYERFIRE)
+      {
+        score_ += sB->enemyPoints; 
+      } else
+      {
+        score2_ += sB->enemyPoints;
+      }
       updateScore_ = true;
     }
   }
 };
 
-int GameScene::hiScore_ = 0;
 int GameScene::level_ = 1;
 int GameScene::score_ = 0;
+int GameScene::score2_ = 0;
 
 void setup()
 {
