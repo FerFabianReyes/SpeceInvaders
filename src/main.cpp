@@ -467,14 +467,15 @@ struct GameScene : public Scene
       }
       else if (gameState_ == GAMESTATE_PLAYERKILLED)
       {
+        if (updateCount % 5)
+        {
+          player_->visible = !player_->visible;
+        }
         if ((updateCount % 30) == 0)
         {
-          if (gameState_ == GAMESTATE_PLAYERKILLED)
-          {
-            player_->visible = true;
-            gameState_ = GAMESTATE_PLAYING;
-            playerFire2_->visible = true;
-          }
+          player_->visible = true;
+          gameState_ = GAMESTATE_PLAYING;
+          playerFire2_->visible = true;
         }
       }
       else if (playerVelX_ != 0 || player2VelX_ != 0)
