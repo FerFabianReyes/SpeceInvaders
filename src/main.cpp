@@ -450,10 +450,9 @@ struct GameScene : public Scene
         }
       }
 
-    bool parpadeo = false;
+
     if (gameState_ == GAMESTATE_PLAYER2KILLED)
       {
-        parpadeo = true;
         if ((updateCount % 30) == 0)
         {
           if (gameState_ == GAMESTATE_PLAYER2KILLED)
