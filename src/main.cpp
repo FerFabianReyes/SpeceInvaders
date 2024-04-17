@@ -153,13 +153,13 @@ struct GameScene : public Scene
     GAMESTATE_LEVELCHANGED
   };
 
-  static const int PLAYERSCOUNT = 1;
+  static const int PLAYERSCOUNT = 2;
   static const int SHIELDSCOUNT = 3;
   static const int ROWENEMIESCOUNT = 11;
-  static const int PLAYERFIRECOUNT = 1;
+  static const int PLAYERFIRECOUNT = 2;
   static const int ENEMIESFIRECOUNT = 1;
   static const int ENEMYMOTHERCOUNT = 1;
-  static const int SPRITESCOUNT = 2 * PLAYERSCOUNT + SHIELDSCOUNT + 3 * ROWENEMIESCOUNT + 2 * PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
+  static const int SPRITESCOUNT = PLAYERSCOUNT + SHIELDSCOUNT + 3 * ROWENEMIESCOUNT + PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
 
   static const int ENEMIES_X_SPACE = 16; // Espacio entre enemigos
   static const int ENEMIES_Y_SPACE = 10;
@@ -177,15 +177,15 @@ struct GameScene : public Scene
 
   SISprite *sprites_ = new SISprite[SPRITESCOUNT];
   SISprite *player_ = sprites_;
-  SISprite *player2_ = player_ + PLAYERSCOUNT;
-  SISprite *shields_ = player2_ + PLAYERSCOUNT;
+  SISprite *player2_ = player_ + 1;
+  SISprite *shields_ = sprites_ + PLAYERSCOUNT;
   SISprite *enemies_ = shields_ + SHIELDSCOUNT;
   SISprite *enemiesR1_ = enemies_;
   SISprite *enemiesR2_ = enemiesR1_ + ROWENEMIESCOUNT;
   SISprite *enemiesR3_ = enemiesR2_ + ROWENEMIESCOUNT;
   SISprite *playerFire_ = enemiesR3_ + ROWENEMIESCOUNT;
-  SISprite *playerFire2_ = playerFire_ + PLAYERFIRECOUNT;
-  SISprite *enemiesFire_ = playerFire2_ + PLAYERFIRECOUNT;
+  SISprite *playerFire2_ = playerFire_ + 1;
+  SISprite *enemiesFire_ = playerFire_ + PLAYERFIRECOUNT;
 
   SISprite *enemyMother_ = enemiesFire_ + ENEMIESFIRECOUNT;
 
