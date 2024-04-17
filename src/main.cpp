@@ -12,7 +12,7 @@ fabgl::Canvas canvas(&DisplayController);
 SoundGenerator soundGenerator;
 
 //Las variables van a ser globales para que no cause proplema
-    constexpr unsigned long TIEMPO_LIMITE = 9000;
+    constexpr unsigned long TIEMPO_LIMITE = 90000;
     constexpr unsigned long TiempoInicio = 0;
 
 // IntroScene
@@ -27,7 +27,7 @@ SoundGenerator soundGenerator;
   canvas.selectFont(&fabgl::FONT_8x8);
 
   // Muestra el mensaje en el centro de la pantalla
-  canvas.drawText(50, 100, "¡Tiempo agotado!");
+  //canvas.drawText(50, 100, "TIEMPO AGOTADO");
 }
 
 struct IntroScene : public Scene
@@ -325,7 +325,8 @@ struct GameScene : public Scene
     canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
     canvas.selectFont(&fabgl::FONT_4x6);
     canvas.setPenColor(108, 155, 245);
-    canvas.drawText(110, 20, "Bienvenidos al espacio");
+    canvas.drawText(122, 20, "TIEMPO");
+    //canvas.drawText(110, 20, "Bienvenidos al espacio");
     canvas.selectFont(&fabgl::FONT_8x8);
     canvas.setPenColor(69, 142, 237);
     canvas.drawText(2, 2, "SCORE");
@@ -370,16 +371,16 @@ struct GameScene : public Scene
     for (int i = 0; i < ROWENEMIESCOUNT * 5; ++i)
       enemies_[i].allowDraw = false;
     // show game over
-    canvas.setPenColor(248, 252, 167);
+    canvas.setPenColor(248, 252, 167);//248, 252, 67
     canvas.setBrushColor(28, 35, 92);
     canvas.fillRectangle(40, 60, 270, 130);
     canvas.drawRectangle(40, 60, 270, 130);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
     canvas.setPenColor(255, 255, 255);
-    canvas.drawText(55, 80, "FIN DEL JUEGO");
+    canvas.drawText(38, 50, "TIEMPO TERMINADO!");//55, 80
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(248, 252, 167);
-    canvas.drawText(95, 100, "Presiona [START]");
+    canvas.drawText(80, 90, "Presiona [START]");
     // change state
     gameState_ = GAMESTATE_GAMEOVER;
     level_ = 1;
@@ -628,11 +629,13 @@ struct GameScene : public Scene
     if (TiempoTranscurrido >= TIEMPO_LIMITE)
     {
       // Mostrar mensaje de tiempo agotado
-      mostrarMensajeTiempoAgotado();
+      //mostrarMensajeTiempoAgotado();
+      gameOver();
     }
     char buffer[4];
-    snprintf(buffer,4,"%d",TiempoTranscurrido)
-    canvas.drawText(70, 80,buffer);
+    snprintf(buffer,4,"%d",TiempoTranscurrido);
+    //canvas.drawText(70, 80,buffer);
+    canvas.drawText(125, 10,buffer);
   }
 
   // player shoots
