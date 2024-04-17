@@ -324,9 +324,9 @@ struct GameScene : public Scene
   void drawScore()
   {
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(5, 14, "%05d", score_);
+    canvas.drawTextFmt(5, 14, "%05d", score2_);
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(266, 14, "%05d", score2_);
+    canvas.drawTextFmt(266, 14, "%05d", score_);
   }
 
   void moveEnemy(SISprite *enemy, int x, int y, bool *touchSide)
@@ -366,6 +366,7 @@ struct GameScene : public Scene
     gameState_ = GAMESTATE_GAMEOVER;
     level_ = 1;
     score_ = 0;
+    score2_ = 0;
   }
 
   void levelChange()
@@ -459,6 +460,7 @@ struct GameScene : public Scene
           {
             player2_->visible = true;
             gameState_ = GAMESTATE_PLAYING;
+            playerFire2_->visible = true;
           }
         }
       }
@@ -470,6 +472,7 @@ struct GameScene : public Scene
           {
             player_->visible = true;
             gameState_ = GAMESTATE_PLAYING;
+            playerFire2_->visible = true;
           }
         }
       } else if (playerVelX_ != 0 || player2VelX_ != 0)
@@ -652,6 +655,7 @@ struct GameScene : public Scene
       // Golpe del enemigo
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       gameState_ = GAMESTATE_PLAYERKILLED;
+      playerFire_->visible = false;
       player_->visible = false;
       if (score_ <= 50)
       {
@@ -659,23 +663,23 @@ struct GameScene : public Scene
       } else {
         score_ -= 50;
       }
-      
+      updateScore_ = true;
     }
-
     
     if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
     {
       //  Golpe de enemigo
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       gameState_ = GAMESTATE_PLAYER2KILLED;
+      playerFire2_->visible = true;
       player2_->visible = false;
-
       if (score2_ <= 50)
       {
         score2_ = 0;
       } else {
         score2_ -= 50;
       }
+      updateScore_ = true;
     }
 
      if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE && sB->type == TYPE_ENEMY)
