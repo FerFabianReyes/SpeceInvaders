@@ -394,16 +394,18 @@ struct GameScene : public Scene
 
     if (gameState_ == GAMESTATE_PLAYING || gameState_ == GAMESTATE_PLAYERKILLED || gameState_ == GAMESTATE_PLAYER2KILLED)
     {
-
-      // move enemies and shoot
-      if ((updateCount % max(3, 21 - level_ * 2)) == 0)
-      {
-        // handle enemy explosion
+      /* Explosiones de enemigos las procesamos a un ritmo distinto que a su movimiento*/
+      if (updateCount) {
         if (lastHitEnemy_)
         {
           lastHitEnemy_->visible = false;
           lastHitEnemy_ = nullptr;
         }
+      }
+
+      // move enemies and shoot
+      if ((updateCount % max(3, 21 - level_ * 2)) == 0)
+      {
         // handle enemies movement
         enemiesX_ += (-1 * (enemiesDir_ & 1) + (enemiesDir_ >> 1 & 1)) * ENEMIES_STEP_X;
         enemiesY_ += (enemiesDir_ >> 2 & 1) * ENEMIES_STEP_Y;
@@ -451,8 +453,7 @@ struct GameScene : public Scene
         }
       }
 
-
-    if (gameState_ == GAMESTATE_PLAYER2KILLED)
+      if (gameState_ == GAMESTATE_PLAYER2KILLED)
       {
         if ((updateCount % 30) == 0)
         {
@@ -475,7 +476,8 @@ struct GameScene : public Scene
             playerFire2_->visible = true;
           }
         }
-      } else if (playerVelX_ != 0 || player2VelX_ != 0)
+      }
+      else if (playerVelX_ != 0 || player2VelX_ != 0)
       {
         // Movimiento de la posición
         player_->x += playerVelX_;
@@ -491,19 +493,22 @@ struct GameScene : public Scene
       if (playerFire_->visible)
       {
         playerFire_->y -= 3;
-        if (playerFire_->y < ENEMIES_START_Y)
+        if (playerFire_->y < ENEMIES_START_Y) {
           playerFire_->visible = false;
-        else
+        }
+        else {
           updateSpriteAndDetectCollisions(playerFire_);
+        }
       }
-
       if (playerFire2_->visible)
       {
         playerFire2_->y -= 3;
-        if (playerFire2_->y < ENEMIES_START_Y)
+        if (playerFire2_->y < ENEMIES_START_Y) {
           playerFire2_->visible = false;
-        else
+        }
+        else {
           updateSpriteAndDetectCollisions(playerFire2_);
+        }
       }
 
       // move enemies fire
@@ -682,7 +687,7 @@ struct GameScene : public Scene
       updateScore_ = true;
     }
 
-     if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE && sB->type == TYPE_ENEMY)
+    if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE && sB->type == TYPE_ENEMY)
     {
       // player fire hits an enemy
       soundGenerator.playSamples(shootSoundSamples, sizeof(shootSoundSamples));
