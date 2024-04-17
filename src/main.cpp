@@ -12,10 +12,23 @@ fabgl::Canvas canvas(&DisplayController);
 SoundGenerator soundGenerator;
 
 //Las variables van a ser globales para que no cause proplema
-    const unsigned long TIEMPO_LIMITE = 90;
-    const unsigned long TiempoInicio = 0;
+    constexpr unsigned long TIEMPO_LIMITE = 9000;
+    constexpr unsigned long TiempoInicio = 0;
 
 // IntroScene
+
+ void mostrarMensajeTiempoAgotado() {
+  // Borra la pantalla, lo que este ahi
+  canvas.setBrushColor(Color::Black);
+  canvas.clear();
+
+  // Configura el color y la fuente del mensaje
+  canvas.setPenColor(Color::White);
+  canvas.selectFont(&fabgl::FONT_8x8);
+
+  // Muestra el mensaje en el centro de la pantalla
+  canvas.drawText(50, 100, "¡Tiempo agotado!");
+}
 
 struct IntroScene : public Scene
 {
@@ -152,7 +165,9 @@ struct GameScene : public Scene
     GAMESTATE_LEVELCHANGING,
     GAMESTATE_LEVELCHANGED
   };
-
+  unsigned long TiempoInicio;
+  unsigned long TiempoTranscurrido;
+  
   static const int PLAYERSCOUNT = 1;
   static const int SHIELDSCOUNT = 3;
   static const int ROWENEMIESCOUNT = 11;
@@ -247,6 +262,7 @@ struct GameScene : public Scene
 
   void init()
   {
+    TiempoInicio = millis();
     // setup player 1
     player_->addBitmap(&bmpPlayer)->addBitmap(&bmpPlayerExplosion[0])->addBitmap(&bmpPlayerExplosion[1]);
     player_->moveTo(225, PLAYER_Y);
@@ -606,6 +622,17 @@ struct GameScene : public Scene
     }
 
     DisplayController.refreshSprites();
+
+    // funcion del tiempo
+    TiempoTranscurrido = (millis() - TiempoInicio);
+    if (TiempoTranscurrido >= TIEMPO_LIMITE)
+    {
+      // Mostrar mensaje de tiempo agotado
+      mostrarMensajeTiempoAgotado();
+    }
+    char buffer[4];
+    snprintf(buffer,4,"%d",TiempoTranscurrido)
+    canvas.drawText(70, 80,buffer);
   }
 
   // player shoots
@@ -620,6 +647,8 @@ struct GameScene : public Scene
     playerFire2_->moveTo(player2_->x + 7, player2_->y - 1)->visible = true;
     soundGenerator.playSamples(fireSoundSamples, sizeof(fireSoundSamples));
   }
+
+  //Cambios del tiempo aqui
 
   // shield has been damaged
   void damageShield(SISprite *shield, Point collisionPoint)
@@ -730,24 +759,13 @@ void setup()
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
- void mostrarMensajeTiempoAgotado() {
-  // Borra la pantalla, lo que este ahi
-  canvas.setBrushColor(Color::Black);
-  canvas.clear();
 
-  // Configura el color y la fuente del mensaje
-  canvas.setPenColor(Color::White);
-  canvas.selectFont(&fabgl::FONT_8x8);
-
-  // Muestra el mensaje en el centro de la pantalla
-  canvas.drawText(50, 100, "¡Tiempo agotadoo!");
-}
 
 
 void loop()
 {
     // Inicia el tiempo
-    unsigned long TiempoInicio = millis();
+ 
 
     // Inicia la escena de introducción solo en el primer nivel
     if (GameScene::level_ == 1) {
@@ -761,15 +779,11 @@ void loop()
     // Bucle para verificar el tiempo transcurrido y detener el juego si es necesario
     
         // Calcula el tiempo transcurrido
-        unsigned long TiempoTranscurrido = (millis() - TiempoInicio) / 1000;
-        if (TiempoTranscurrido >= TIEMPO_LIMITE) {
-            // Mostrar mensaje de tiempo agotado
-            mostrarMensajeTiempoAgotado();
 
             // Detener el juego
             // Puedes agregar aquí la lógica para detener el juego adecuadamente
             //break; // Salir del bucle de verificación de tiempo
         
         // Actualiza el juego u otras operaciones si es necesario
-    }
+    
 }
