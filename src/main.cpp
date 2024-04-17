@@ -165,16 +165,16 @@ struct GameScene : public Scene
     GAMESTATE_LEVELCHANGING,
     GAMESTATE_LEVELCHANGED
   };
+
   unsigned long TiempoInicio;
   unsigned long TiempoTranscurrido;
-  
-  static const int PLAYERSCOUNT = 1;
+  static const int PLAYERSCOUNT = 2;
   static const int SHIELDSCOUNT = 3;
   static const int ROWENEMIESCOUNT = 11;
-  static const int PLAYERFIRECOUNT = 1;
+  static const int PLAYERFIRECOUNT = 2;
   static const int ENEMIESFIRECOUNT = 1;
   static const int ENEMYMOTHERCOUNT = 1;
-  static const int SPRITESCOUNT = 2 * PLAYERSCOUNT + SHIELDSCOUNT + 3 * ROWENEMIESCOUNT + 2 * PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
+  static const int SPRITESCOUNT = PLAYERSCOUNT + SHIELDSCOUNT + 3 * ROWENEMIESCOUNT + PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
 
   static const int ENEMIES_X_SPACE = 16; // Espacio entre enemigos
   static const int ENEMIES_Y_SPACE = 10;
@@ -187,20 +187,20 @@ struct GameScene : public Scene
   static const int PLAYER2_Y = 170;
 
   static int score_;
+  static int score2_;
   static int level_;
-  static int hiScore_;
 
   SISprite *sprites_ = new SISprite[SPRITESCOUNT];
   SISprite *player_ = sprites_;
-  SISprite *player2_ = player_ + PLAYERSCOUNT;
-  SISprite *shields_ = player2_ + PLAYERSCOUNT;
+  SISprite *player2_ = player_ + 1;
+  SISprite *shields_ = sprites_ + PLAYERSCOUNT;
   SISprite *enemies_ = shields_ + SHIELDSCOUNT;
   SISprite *enemiesR1_ = enemies_;
   SISprite *enemiesR2_ = enemiesR1_ + ROWENEMIESCOUNT;
   SISprite *enemiesR3_ = enemiesR2_ + ROWENEMIESCOUNT;
   SISprite *playerFire_ = enemiesR3_ + ROWENEMIESCOUNT;
-  SISprite *playerFire2_ = playerFire_ + PLAYERFIRECOUNT;
-  SISprite *enemiesFire_ = playerFire2_ + PLAYERFIRECOUNT;
+  SISprite *playerFire2_ = playerFire_ + 1;
+  SISprite *enemiesFire_ = playerFire_ + PLAYERFIRECOUNT;
 
   SISprite *enemyMother_ = enemiesFire_ + ENEMIESFIRECOUNT;
 
@@ -289,7 +289,7 @@ struct GameScene : public Scene
     // setup shields
     for (int i = 0; i < 3; ++i)
     {
-      shields_[i].addBitmap(&bmpShield[i])->moveTo(70 + i * 75, 150);
+      shields_[i].addBitmap(&bmpShield[i])->moveTo(71 + i * 75, 150);
       shields_[i].isStatic = true;
       shields_[i].type = TYPE_SHIELD;
       addSprite(&shields_[i]);
@@ -327,9 +327,10 @@ struct GameScene : public Scene
     canvas.setPenColor(248, 252, 167);
     canvas.drawText(133, 2, "TIEMPO");
     canvas.setPenColor(69, 142, 237);
-    canvas.drawText(2, 2, "SCORE");
-    canvas.setPenColor(248, 252, 167);
-    canvas.drawText(254, 2, "HI-SCORE");
+    canvas.setPenColor(169, 142, 237);
+    canvas.drawText(2, 2, "Jugador 1");
+    canvas.setPenColor(230, 232, 235);
+    canvas.drawText(244, 2, "Jugador 2");
     canvas.setPenColor(255, 255, 255);
     canvas.drawTextFmt(256, 181, "Nivel %02d", level_);
 
@@ -339,13 +340,9 @@ struct GameScene : public Scene
   void drawScore()
   {
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(2, 14, "%05d", score_);
-    /*canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(133, 14, "%03d", TiempoTranscurrido);*/
-    if (score_ > hiScore_)
-      hiScore_ = score_;
+    canvas.drawTextFmt(5, 14, "%05d", score2_);
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(266, 14, "%05d", hiScore_);
+    canvas.drawTextFmt(266, 14, "%05d", score_);
   }
 
   void moveEnemy(SISprite *enemy, int x, int y, bool *touchSide)
@@ -385,6 +382,7 @@ struct GameScene : public Scene
     gameState_ = GAMESTATE_GAMEOVER;
     level_ = 1;
     score_ = 0;
+    score2_ = 0;
   }
 
   void levelChange()
@@ -412,16 +410,18 @@ struct GameScene : public Scene
 
     if (gameState_ == GAMESTATE_PLAYING || gameState_ == GAMESTATE_PLAYERKILLED || gameState_ == GAMESTATE_PLAYER2KILLED)
     {
-
-      // move enemies and shoot
-      if ((updateCount % max(3, 21 - level_ * 2)) == 0)
-      {
-        // handle enemy explosion
+      /* Explosiones de enemigos las procesamos a un ritmo distinto que a su movimiento*/
+      if (updateCount) {
         if (lastHitEnemy_)
         {
           lastHitEnemy_->visible = false;
           lastHitEnemy_ = nullptr;
         }
+      }
+
+      // move enemies and shoot
+      if ((updateCount % max(3, 21 - level_ * 2)) == 0)
+      {
         // handle enemies movement
         enemiesX_ += (-1 * (enemiesDir_ & 1) + (enemiesDir_ >> 1 & 1)) * ENEMIES_STEP_X;
         enemiesY_ += (enemiesDir_ >> 2 & 1) * ENEMIES_STEP_Y;
@@ -469,29 +469,32 @@ struct GameScene : public Scene
         }
       }
 
-     if (gameState_ == GAMESTATE_PLAYER2KILLED)
+      if (gameState_ == GAMESTATE_PLAYER2KILLED)
       {
-        if ((updateCount % 20) == 0)
+        if ((updateCount % 30) == 0)
         {
           if (gameState_ == GAMESTATE_PLAYER2KILLED)
           {
             player2_->visible = true;
             gameState_ = GAMESTATE_PLAYING;
+            playerFire2_->visible = true;
           }
         }
       }
       else if (gameState_ == GAMESTATE_PLAYERKILLED)
       {
-        // animate player explosion or restart playing other lives
-        if ((updateCount % 20) == 0)
+        if (updateCount % 5)
         {
-          if (gameState_ == GAMESTATE_PLAYER2KILLED)
-          {
-            player2_->visible = true;
-            gameState_ = GAMESTATE_PLAYING;
-          }
+          player_->visible = !player_->visible;
         }
-      } else if (playerVelX_ != 0 || player2VelX_ != 0)
+        if ((updateCount % 30) == 0)
+        {
+          player_->visible = true;
+          gameState_ = GAMESTATE_PLAYING;
+          playerFire2_->visible = true;
+        }
+      }
+      else if (playerVelX_ != 0 || player2VelX_ != 0)
       {
         // Movimiento de la posición
         player_->x += playerVelX_;
@@ -507,19 +510,22 @@ struct GameScene : public Scene
       if (playerFire_->visible)
       {
         playerFire_->y -= 3;
-        if (playerFire_->y < ENEMIES_START_Y)
+        if (playerFire_->y < ENEMIES_START_Y) {
           playerFire_->visible = false;
-        else
+        }
+        else {
           updateSpriteAndDetectCollisions(playerFire_);
+        }
       }
-
       if (playerFire2_->visible)
       {
         playerFire2_->y -= 3;
-        if (playerFire2_->y < ENEMIES_START_Y)
+        if (playerFire2_->y < ENEMIES_START_Y) {
           playerFire2_->visible = false;
-        else
+        }
+        else {
           updateSpriteAndDetectCollisions(playerFire2_);
+        }
       }
 
       // move enemies fire
@@ -672,19 +678,6 @@ struct GameScene : public Scene
   {
     SISprite *sA = (SISprite *)spriteA;
     SISprite *sB = (SISprite *)spriteB;
-    if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE && sB->type == TYPE_ENEMY)
-    {
-      // player fire hits an enemy
-      soundGenerator.playSamples(shootSoundSamples, sizeof(shootSoundSamples));
-      sA->visible = false;
-      sB->setFrame(2);
-      lastHitEnemy_ = sB;
-      --enemiesAlive_;
-      score_ += sB->enemyPoints;
-      updateScore_ = true;
-      if (enemiesAlive_ == 0)
-        gameState_ = GAMESTATE_LEVELCHANGING;
-    }
  
     if (sB->type == TYPE_SHIELD)
     {
@@ -699,9 +692,34 @@ struct GameScene : public Scene
       // Golpe del enemigo
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       gameState_ = GAMESTATE_PLAYERKILLED;
+      playerFire_->visible = false;
       player_->visible = false;
+      if (score_ <= 50)
+      {
+        score_ = 0;
+      } else {
+        score_ -= 50;
+      }
+      updateScore_ = true;
     }
-     if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
+    
+    if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
+    {
+      //  Golpe de enemigo
+      soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
+      gameState_ = GAMESTATE_PLAYER2KILLED;
+      playerFire2_->visible = true;
+      player2_->visible = false;
+      if (score2_ <= 50)
+      {
+        score2_ = 0;
+      } else {
+        score2_ -= 50;
+      }
+      updateScore_ = true;
+    }
+
+    if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE && sB->type == TYPE_ENEMY)
     {
       // player fire hits an enemy
       soundGenerator.playSamples(shootSoundSamples, sizeof(shootSoundSamples));
@@ -715,14 +733,6 @@ struct GameScene : public Scene
         gameState_ = GAMESTATE_LEVELCHANGING;
     }
 
-    if (gameState_ == GAMESTATE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
-    {
-      //  Golpe de enemigo
-      soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
-      gameState_ = GAMESTATE_PLAYER2KILLED;
-      player_->visible = false;
-    }
-
     if (!lastHitEnemy_ && sA->type == TYPE_PLAYERFIRE2 && sB->type == TYPE_ENEMY)
     {
       // player fire hits an enemy
@@ -731,7 +741,7 @@ struct GameScene : public Scene
       sB->setFrame(2);
       lastHitEnemy_ = sB;
       --enemiesAlive_;
-      score_ += sB->enemyPoints;
+      score2_ += sB->enemyPoints;
       updateScore_ = true;
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
@@ -744,25 +754,30 @@ struct GameScene : public Scene
       sA->visible = false;
       sB->setFrame(1);
       lastHitEnemy_ = sB;
-      score_ += sB->enemyPoints;
+      if (sA->type == TYPE_PLAYERFIRE)
+      {
+        score_ += sB->enemyPoints; 
+      } else
+      {
+        score2_ += sB->enemyPoints;
+      }
       updateScore_ = true;
     }
   }
 };
 
-int GameScene::hiScore_ = 0;
 int GameScene::level_ = 1;
 int GameScene::score_ = 0;
+int GameScene::score2_ = 0;
 
 void setup()
 {
   //78:dd:08:4d:94:a4
   //24:6f:28:af:1c:66
-  Ps3.begin("78:dd:08:4d:94:a4");
+  Ps3.begin("24:6f:28:af:1c:66");
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
-
 
 
 void loop()
