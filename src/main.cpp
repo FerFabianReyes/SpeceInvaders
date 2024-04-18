@@ -14,6 +14,7 @@ SoundGenerator soundGenerator;
 //Las variables van a ser globales para que no cause proplema
 constexpr unsigned long TIEMPO_LIMITE = 90000;
 unsigned long tiempoInicio;
+unsigned long TiempoTranscurrido;
 
 // IntroScene
 
@@ -153,7 +154,7 @@ struct GameScene : public Scene
     GAMESTATE_LEVELCHANGING,
     GAMESTATE_LEVELCHANGED
   };
-  unsigned long TiempoTranscurrido;
+  
   static const int PLAYERSCOUNT = 2;
   static const int SHIELDSCOUNT = 3;
   static const int ROWENEMIESCOUNT = 11;
@@ -317,13 +318,13 @@ struct GameScene : public Scene
     canvas.setPenColor(230, 232, 235);
     canvas.drawText(244, 2, "Jugador 2");
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(256, 181, "Dificultad %02d", dificuldad_);
+    canvas.drawTextFmt(216, 181, "Dificultad %02d", dificuldad_);
     canvas.setPenColor(86, 154, 209);
     if(dificuldad_ == 2){
-      canvas.drawTextFmt(120, 181, "Nueva Orda ¡Cuidado! %02d", dificuldad_);
+      canvas.drawTextFmt(20, 181, "Nueva Horda, Cuidado!");
     } else if (dificuldad_ >= 3)
     {
-      canvas.drawTextFmt(120, 181, "¡Vienen maaaaas! %02d", dificuldad_);
+      canvas.drawTextFmt(20, 181, "Vienen maaaaas!");
     }
     
 
@@ -358,10 +359,10 @@ struct GameScene : public Scene
   void gameOver()
   {
     // disable enemies drawing, so text can be over them
-    for (int i = 0; i < ROWENEMIESCOUNT * 5; ++i)
+    for (int i = 0; i < ROWENEMIESCOUNT * 3; ++i)
       enemies_[i].allowDraw = false;
     // show game over
-    canvas.setPenColor(248, 252, 167);//248, 252, 67
+    canvas.setPenColor(248, 252, 167);
     canvas.setBrushColor(28, 35, 92);
     canvas.fillRectangle(40, 60, 270, 130);
     canvas.drawRectangle(40, 60, 270, 130);
@@ -391,25 +392,20 @@ struct GameScene : public Scene
     dificuldad_ = 1;
     score2_ = 0;
     score1_ = 0;
+    TiempoTranscurrido = 0;
   }
 
   void levelChange()
   {
-    //++dificuldad_;
-    // show game over
-    /*canvas.setPenColor(248, 252, 167);
-    canvas.drawRectangle(80, 80, 240, 110);
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(1));
-    canvas.drawTextFmt(105, 88, "NIVEL %d", dificuldad_);
-    canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));*/
+    ++dificuldad_;
     // change state
     gameState_ = GAMESTATE_LEVELCHANGED;
-    pauseStart_ = esp_timer_get_time();
+   // pauseStart_ = esp_timer_get_time();
   }
 
   void update(int updateCount)
   {
-
+    TiempoTranscurrido = (millis())/1000;
     if (updateScore_)
     {
       updateScore_ = false;
@@ -613,7 +609,7 @@ struct GameScene : public Scene
     if (gameState_ == GAMESTATE_LEVELCHANGING)
       levelChange();
 
-    if (gameState_ == GAMESTATE_LEVELCHANGED && esp_timer_get_time() >= pauseStart_ + 2500000)
+    if (gameState_ == GAMESTATE_LEVELCHANGED /*&& esp_timer_get_time() >= pauseStart_ + 500000*/)
     {
       stop(); // restart from next level
       DisplayController.removeSprites();
@@ -639,13 +635,13 @@ struct GameScene : public Scene
     DisplayController.refreshSprites();
 
     // funcion del tiempo
-    TiempoTranscurrido = (millis() - tiempoInicio)/1000;
+    
     if (90 - TiempoTranscurrido == 0)
     {
       // Mostrar mensaje de tiempo agotado
       //mostrarMensajeTiempoAgotado();
+      gameState_ = GAMESTATE_ENDGAME_TIME_OVER;
       gameOver();
-      TiempoTranscurrido = 0;
     }
 
     canvas.setPenColor(255, 255, 255);
@@ -790,9 +786,6 @@ void setup()
 
 void loop()
 {
-    // Inicia el tiempo
- 
-
     // Inicia la escena de introducción solo en el primer nivel
     if (GameScene::dificuldad_ == 1) {
         IntroScene introScene;
