@@ -147,7 +147,8 @@ struct GameScene : public Scene
     GAMESTATE_PLAYING,
     GAMESTATE_PLAYER1KILLED,
     GAMESTATE_PLAYER2KILLED,
-    GAMESTATE_ENDGAME,
+    GAMESTATE_ENDGAME_TIME_OVER,
+    GAMESTATE_ENDGAME_ENEMY_WIN,
     GAMESTATE_GAMEOVER,
     GAMESTATE_LEVELCHANGING,
     GAMESTATE_LEVELCHANGED
@@ -349,7 +350,7 @@ struct GameScene : public Scene
       if (y >= PLAYER1_Y)
       {
         // enemies reach earth!
-        gameState_ = GAMESTATE_ENDGAME;
+        gameState_ = GAMESTATE_ENDGAME_TIME_OVER;
       }
     }
   }
@@ -366,7 +367,12 @@ struct GameScene : public Scene
     canvas.drawRectangle(40, 60, 270, 130);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(255, 255, 255);
-    canvas.drawText(80, 72, "¡TIEMPO TERMINADO!");
+    if(gameState_ == GAMESTATE_ENDGAME_ENEMY_WIN){
+      canvas.drawText(80, 72, "¡DOMINARON LA TIERRA!");
+    } else
+    {
+      canvas.drawText(80, 72, "¡TIEMPO TERMINADO!");
+    }
     if(score1_ > score2_){
       canvas.setPenColor(167, 170, 242);
       canvas.drawText(50, 90, "El jugador 1 ha ganado con %d puntos", score1_);
@@ -601,8 +607,8 @@ struct GameScene : public Scene
         fire2();
     }
 
-    if (gameState_ == GAMESTATE_ENDGAME)
-      gameOver();
+    if (gameState_ == GAMESTATE_ENDGAME_TIME_OVER || gameState_ == GAMESTATE_ENDGAME_ENEMY_WIN)
+      gameOver(); 
 
     if (gameState_ == GAMESTATE_LEVELCHANGING)
       levelChange();
