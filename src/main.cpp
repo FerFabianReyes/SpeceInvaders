@@ -5,6 +5,9 @@
 #include "sounds.h"
 #include "WiFiGeneric.h"
 
+#include "driver/periph_ctrl.h"
+#include "driver/timer.h"
+
 using fabgl::iclamp;
 
 fabgl::VGAController DisplayController;
@@ -12,8 +15,8 @@ fabgl::Canvas canvas(&DisplayController);
 SoundGenerator soundGenerator;
 
 //Las variables van a ser globales para que no cause proplema
-    constexpr unsigned long TIEMPO_LIMITE = 90000;
-    constexpr unsigned long TiempoInicio = 0;
+constexpr unsigned long TIEMPO_LIMITE = 90000;
+unsigned long tiempoInicio;
 
 // IntroScene
 
@@ -165,8 +168,6 @@ struct GameScene : public Scene
     GAMESTATE_LEVELCHANGING,
     GAMESTATE_LEVELCHANGED
   };
-
-  unsigned long TiempoInicio;
   unsigned long TiempoTranscurrido;
   static const int PLAYERSCOUNT = 2;
   static const int SHIELDSCOUNT = 3;
@@ -262,7 +263,6 @@ struct GameScene : public Scene
 
   void init()
   {
-    TiempoInicio = millis();
     // setup player 1
     player_->addBitmap(&bmpPlayer)->addBitmap(&bmpPlayerExplosion[0])->addBitmap(&bmpPlayerExplosion[1]);
     player_->moveTo(225, PLAYER_Y);
@@ -631,7 +631,7 @@ struct GameScene : public Scene
     DisplayController.refreshSprites();
 
     // funcion del tiempo
-    TiempoTranscurrido = (millis() - TiempoInicio)/1000;
+    TiempoTranscurrido = (millis() - tiempoInicio)/1000;
     if (90 - TiempoTranscurrido == 0)
     {
       // Mostrar mensaje de tiempo agotado
@@ -772,6 +772,13 @@ int GameScene::score2_ = 0;
 
 void setup()
 {
+  timer_config_t config;
+  config.divider = 80E6;
+  config.counter_dir = TIMER_COUNT_UP;
+  config.counter_en = TIMER_PAUSE;
+  config.alarm_en = TIMER_ALARM_DIS;
+  config.auto_reload = TIMER_AUTORELOAD_DIS; 
+  timer_init(TIMER_GROUP_0, TIMER_0, &config);
   //78:dd:08:4d:94:a4
   //24:6f:28:af:1c:66
   Ps3.begin("24:6f:28:af:1c:66");
@@ -790,18 +797,8 @@ void loop()
         IntroScene introScene;
         introScene.start();
     }
-
+    timer_start(TIMER_GROUP_0, TIMER_0);
     GameScene gameScene;
     gameScene.start();
-
-    // Bucle para verificar el tiempo transcurrido y detener el juego si es necesario
-    
-        // Calcula el tiempo transcurrido
-
-            // Detener el juego
-            // Puedes agregar aquí la lógica para detener el juego adecuadamente
-            //break; // Salir del bucle de verificación de tiempo
-        
-        // Actualiza el juego u otras operaciones si es necesario
     
 }
