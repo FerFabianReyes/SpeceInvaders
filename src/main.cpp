@@ -12,10 +12,10 @@ fabgl::Canvas canvas(&DisplayController);
 SoundGenerator soundGenerator;
 
 //Las variables van a ser globales para que no cause proplema
-constexpr unsigned long TIEMPO_LIMITE = 90;
+constexpr unsigned long TIEMPO_LIMITE = 90000;
 unsigned long tiempoInicio;
 unsigned long tiempoTranscurrido;
-bool TiempoCapturado = false;
+bool tiempoCapturado = false;
 
 // IntroScene
 
@@ -253,9 +253,9 @@ struct GameScene : public Scene
 
   void init()
   {
-    if (!TiempoCapturado){
-      tiempoInicio = (millis())/1000;
-      TiempoCapturado = true;
+    if (!tiempoCapturado){
+      tiempoInicio = millis();
+      tiempoCapturado = true;
     }
     // setup player 1
     player_->addBitmap(&bmpPlayer);
@@ -376,11 +376,9 @@ struct GameScene : public Scene
     canvas.drawRectangle(40, 60, 270, 130);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(255, 255, 255);
-    if(gameState_ == GAMESTATE_ENDGAME_ENEMY_WIN){
-      canvas.drawText(80, 72, "¡DOMINARON LA TIERRA!");
-    } else {
-      canvas.drawText(80, 72, "¡TIEMPO TERMINADO!");
-    }
+    canvas.drawText(80, 72, "Tiempo Terminado!");
+    Serial.println(score1_);
+    Serial.println(score2_);
     if(score1_ > score2_){
       canvas.setPenColor(167, 170, 242);
       canvas.drawText(50, 90, "El jugador 1 ha ganado con %d puntos", score1_);
@@ -412,7 +410,7 @@ struct GameScene : public Scene
 
   void update(int updateCount)
   {
-    tiempoTranscurrido = (millis())/1000 - tiempoInicio;
+    tiempoTranscurrido = millis() - tiempoInicio;
     if (updateScore_)
     {
       updateScore_ = false;
@@ -625,21 +623,23 @@ struct GameScene : public Scene
       DisplayController.removeSprites();
     }
 
+
     /* Activamos el fin del juego tras el tiempo límite*/
-    if (TIEMPO_LIMITE - tiempoTranscurrido <= 0)
-    {
+    if (((signed long)TIEMPO_LIMITE - (signed long)tiempoTranscurrido) < 0) {
       gameState_ = GAMESTATE_GAMEOVER;
       gameOver();
-    } else {
-      canvas.drawTextFmt(150, 14, "%2d", TIEMPO_LIMITE - tiempoTranscurrido);
     }
 
-    if (gameState_ == GAMESTATE_GAMEOVER)
-    {
-      TiempoCapturado = false;
-      stop();
+    if (gameState_ == GAMESTATE_GAMEOVER) {
+      tiempoCapturado = false;
+      if (Ps3.event.button_down.start) {
+        stop();
+        DisplayController.removeSprites();
+      }
       DisplayController.removeSprites();
-      Serial.println("Game Over");
+      //Serial.println("Game Over");
+    } else {
+      canvas.drawTextFmt(150, 14, "%2d", (TIEMPO_LIMITE - tiempoTranscurrido)/1000);
     }
 
     DisplayController.refreshSprites();
@@ -773,7 +773,8 @@ void setup()
 {
   //78:dd:08:4d:94:a4
   //24:6f:28:af:1c:66
-  Ps3.begin("24:6f:28:af:1c:66");
+  Ps3.begin("78:dd:08:4d:94:a4");
+  Serial.begin(115200);
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
