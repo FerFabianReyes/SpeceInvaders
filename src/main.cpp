@@ -16,6 +16,9 @@ constexpr unsigned long TIEMPO_LIMITE = 90000;
 unsigned long tiempoInicio;
 unsigned long tiempoTranscurrido;
 bool tiempoCapturado = false;
+static int score2_ = 0;
+static int score1_ = 0;
+static int dificuldad_ = 1;
 
 // IntroScene
 
@@ -146,15 +149,9 @@ struct GameScene : public Scene
 
   enum GameState
   {
-    GAMESTATE_PLAYER_ONE_PLAYING,
-    GAMESTATE_PLAYER_TWO_PLAYING,
-    GAMESTATE_PLAYER_ONE_KILLED,
-    GAMESTATE_PLAYER_TWO_KILLED,
-    GAMESTATE_ENDGAME_TIME_OVER,
-    GAMESTATE_ENDGAME_ENEMY_WIN,
-    GAMESTATE_GAMEOVER,
-    GAMESTATE_LEVELCHANGING,
-    GAMESTATE_LEVELCHANGED
+    GAMESTATE_ENDGAME,
+    GAMESTATE_RUNNING,
+    GAMESTATE_LEVELCHANGING
   };
   
   static const int PLAYERSCOUNT = 2;
@@ -174,10 +171,6 @@ struct GameScene : public Scene
 
   static const int PLAYER1_Y = 170;
   static const int PLAYER2_Y = 170;
-
-  static int score2_;
-  static int score1_;
-  static int dificuldad_;
 
   SISprite *sprites_ = new SISprite[SPRITESCOUNT];
   SISprite *player_ = sprites_;
@@ -213,15 +206,15 @@ struct GameScene : public Scene
   static constexpr int ENEMY_MOV_RIGHT = 2;
   static constexpr int ENEMY_MOV_DOWN_BEFORE_LEFT = 4;
   static constexpr int ENEMY_MOV_DOWN_BEFORE_RIGHT = 12;
-  bool player1IsActive = true;
-  bool player2IsActive = true;
+  bool playerOneIsActive = true;
+  bool playerTwoIsActive = true;
 
   int enemiesDir_ = ENEMY_MOV_RIGHT;
 
   int enemiesAlive_ = ROWENEMIESCOUNT * 3;
   int enemiesSoundCount_ = 0;
   SISprite *lastHitEnemy_ = nullptr;
-  GameState gameState_ = GAMESTATE_PLAYER_ONE_PLAYING;
+  GameState gameState_ = GAMESTATE_RUNNING;
 
   bool updateScore_ = true;
   int64_t pauseStart_;
@@ -329,10 +322,10 @@ struct GameScene : public Scene
     canvas.drawTextFmt(216, 181, "Dificultad %02d", dificuldad_);
     canvas.setPenColor(86, 154, 209);
     if(dificuldad_ == 2){
-      canvas.drawTextFmt(20, 181, "Nueva Horda, Cuidado!");
+      canvas.drawTextFmt(15, 181, "Nueva horda, cuidado!");
     } else if (dificuldad_ >= 3)
     {
-      canvas.drawTextFmt(20, 181, "Vienen maaaaas!");
+      canvas.drawTextFmt(15, 181, "Vienen maaaaas!");
     }
     
 
@@ -359,7 +352,7 @@ struct GameScene : public Scene
       if (y >= PLAYER1_Y)
       {
         // enemies reach earth!
-        gameState_ = GAMESTATE_ENDGAME_TIME_OVER;
+        gameState_ = GAMESTATE_ENDGAME;
       }
     }
   }
@@ -376,36 +369,29 @@ struct GameScene : public Scene
     canvas.drawRectangle(40, 60, 270, 130);
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(255, 255, 255);
-    canvas.drawText(80, 72, "Tiempo Terminado!");
-    Serial.println(score1_);
-    Serial.println(score2_);
+    canvas.drawText(85, 72, "Tiempo Terminado!");
+    //Serial.println(score1_);
+    //Serial.println(score2_);
     if(score1_ > score2_){
       canvas.setPenColor(167, 170, 242);
-      canvas.drawText(50, 90, "El jugador 1 ha ganado con %d puntos", score1_);
+      canvas.drawText(50, 85, "El jugador 1 ha ganado con");
+      canvas.drawTextFmt(105, 96, "%d puntos", score1_);
     } else if (score2_ > score1_){
       canvas.setPenColor(167, 170, 242);
-      canvas.drawText(50, 90, "El jugador 2 ha ganado con %d puntos", score2_);
+      canvas.drawText(50, 80, "El jugador 2 ha ganado con");
+      canvas.drawTextFmt(105, 96, "%d puntos", score2_);
     }else{
       canvas.setPenColor(167, 170, 242);
-      canvas.drawText(100, 90, "¡Es un empate!");
+      canvas.drawText(100, 90, "Es un empate!");
     }
     
     canvas.setPenColor(248, 252, 167);
-    canvas.drawText(100, 110, "Presiona [START]");
+    canvas.drawText(95, 110, "Presiona [START]");
     // change state
-    gameState_ = GAMESTATE_GAMEOVER;
-    dificuldad_ = 1;
+    /*dificuldad_ = 1;
     score2_ = 0;
-    score1_ = 0;
+    score1_ = 0;*/
     tiempoTranscurrido = 0;
-  }
-
-  void levelChange()
-  {
-    ++dificuldad_;
-    // change state
-    gameState_ = GAMESTATE_LEVELCHANGED;
-   // pauseStart_ = esp_timer_get_time();
   }
 
   void update(int updateCount)
@@ -417,7 +403,7 @@ struct GameScene : public Scene
       drawScore();
     }
 
-    if (gameState_ == GAMESTATE_PLAYER_ONE_PLAYING || gameState_ == GAMESTATE_PLAYER_ONE_KILLED || gameState_ == GAMESTATE_PLAYER_TWO_KILLED)
+    if (gameState_ == GAMESTATE_RUNNING)
     {
       /* Explosiones de enemigos las procesamos a un ritmo distinto que a su movimiento*/
       if (updateCount) {
@@ -477,9 +463,9 @@ struct GameScene : public Scene
           }
         }
       }
-      if (gameState_ == GAMESTATE_PLAYER_ONE_KILLED || gameState_ == GAMESTATE_PLAYER_TWO_KILLED)
+      if (playerOneIsActive || playerTwoIsActive)
       {
-        if (gameState_ == GAMESTATE_PLAYER_ONE_KILLED)
+        if (!playerOneIsActive)
         {
           if (updateCount % 5 == 0)
           {
@@ -488,11 +474,11 @@ struct GameScene : public Scene
           if ((updateCount % 60) == 0)
           {
             player_->visible = true;
-            gameState_ = GAMESTATE_PLAYER_ONE_PLAYING;
+            playerOneIsActive = true;
             playerFire2_->visible = true;
           }
         }
-        if (gameState_ == GAMESTATE_PLAYER_TWO_KILLED)
+        if (!playerTwoIsActive)
         {
           if (updateCount % 5 == 0)
           {
@@ -501,12 +487,12 @@ struct GameScene : public Scene
           if ((updateCount % 60) == 0)
           {
             player2_->visible = true;
-            gameState_ = GAMESTATE_PLAYER_TWO_PLAYING;
+            playerTwoIsActive = true;
             playerFire2_->visible = true;
           }
         }
       }
-      else if (playerVelX_ != 0 || player2VelX_ != 0)
+      if (playerVelX_ != 0 || player2VelX_ != 0)
       {
         // Movimiento de la posición
         player_->x += playerVelX_;
@@ -611,26 +597,23 @@ struct GameScene : public Scene
         fire2();
     }
 
-    if (gameState_ == GAMESTATE_ENDGAME_TIME_OVER || gameState_ == GAMESTATE_ENDGAME_ENEMY_WIN)
+    if (gameState_ == GAMESTATE_ENDGAME || gameState_ == GAMESTATE_ENDGAME){
       gameOver();
+    }  
 
-    if (gameState_ == GAMESTATE_LEVELCHANGING)
-      levelChange();
-
-    if (gameState_ == GAMESTATE_LEVELCHANGED /*&& esp_timer_get_time() >= pauseStart_ + 500000*/)
-    {
-      stop(); // restart from next level
+    if (gameState_ == GAMESTATE_LEVELCHANGING) {
+      dificuldad_++;
+      stop();
       DisplayController.removeSprites();
     }
 
-
     /* Activamos el fin del juego tras el tiempo límite*/
     if (((signed long)TIEMPO_LIMITE - (signed long)tiempoTranscurrido) < 0) {
-      gameState_ = GAMESTATE_GAMEOVER;
+      gameState_ = GAMESTATE_ENDGAME;
       gameOver();
     }
 
-    if (gameState_ == GAMESTATE_GAMEOVER) {
+    if (gameState_ == GAMESTATE_ENDGAME) {
       tiempoCapturado = false;
       if (Ps3.event.button_down.start) {
         stop();
@@ -688,11 +671,11 @@ struct GameScene : public Scene
       sB->allowDraw = true;
     }
 
-    if (gameState_ == GAMESTATE_PLAYER_ONE_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER1)
+    if (playerOneIsActive && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER1)
     {
       // Golpe del enemigo
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
-      gameState_ = GAMESTATE_PLAYER_ONE_KILLED;
+      playerOneIsActive = false;
       playerFire_->visible = false;
       player_->visible = false;
       if (score2_ <= 50)
@@ -703,11 +686,11 @@ struct GameScene : public Scene
       }
       updateScore_ = true;
     }
-    if (gameState_ == GAMESTATE_PLAYER_TWO_PLAYING && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
+    if (playerTwoIsActive && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
     {
       //  Golpe de enemigo
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
-      gameState_ = GAMESTATE_PLAYER_TWO_KILLED;
+      playerTwoIsActive = false;
       playerFire2_->visible = true;
       player2_->visible = false;
       if (score1_ <= 50)
@@ -765,16 +748,12 @@ struct GameScene : public Scene
   }
 };
 
-int GameScene::dificuldad_ = 1;
-int GameScene::score2_ = 0;
-int GameScene::score1_ = 0;
-
 void setup()
 {
   //78:dd:08:4d:94:a4
   //24:6f:28:af:1c:66
   Ps3.begin("78:dd:08:4d:94:a4");
-  Serial.begin(115200);
+  //Serial.begin(115200);
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
@@ -783,7 +762,7 @@ void setup()
 void loop()
 {
     // Inicia la escena de introducción solo en el primer nivel
-    if (GameScene::dificuldad_ == 1) {
+    if (dificuldad_ == 1) {
         IntroScene introScene;
         introScene.start();
     }
