@@ -15,6 +15,7 @@ SoundGenerator soundGenerator;
 constexpr unsigned long TIEMPO_LIMITE = 90000;
 unsigned long tiempoInicio;
 unsigned long TiempoTranscurrido;
+unsigned long TiempoCapturado = false;
 
 // IntroScene
 
@@ -249,6 +250,7 @@ struct GameScene : public Scene
 
   void init()
   {
+    tiempoInicio = (millis())/1000;
     // setup player 1
     player_->addBitmap(&bmpPlayer);
     player_->moveTo(225, PLAYER1_Y);
@@ -405,7 +407,7 @@ struct GameScene : public Scene
 
   void update(int updateCount)
   {
-    TiempoTranscurrido = (millis())/1000;
+    TiempoTranscurrido = (millis())/1000 - tiempoInicio;
     if (updateScore_)
     {
       updateScore_ = false;
