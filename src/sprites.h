@@ -80,7 +80,6 @@ const uint8_t player_data[] = {
 };
 //Jugador 1
 Bitmap bmpPlayer = Bitmap(14, 8, player_data, PixelFormat::Mask, RGB888(230, 232, 235));
-
 //Jugador 2
 Bitmap bmpPlayer2 = Bitmap(14, 8, player_data, PixelFormat::Mask, RGB888(167, 170, 242));
 

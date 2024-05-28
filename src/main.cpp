@@ -15,7 +15,7 @@ SoundGenerator soundGenerator;
 constexpr unsigned long TIEMPO_LIMITE = 90000;
 unsigned long tiempoInicio;
 unsigned long tiempoTranscurrido;
-bool tiempoCapturado = false;
+bool juegoCompletado = true;
 static int score2_ = 0;
 static int score1_ = 0;
 static int dificuldad_ = 1;
@@ -108,13 +108,13 @@ struct IntroScene : public Scene
       if (updateCount % 20 == 0)
       {
         canvas.setPenColor(random(255), random(255), 255);
-        canvas.drawText(50, 75, "Presiona [START] para jugar");
+        canvas.drawText(50, 75, "Presiona [VERDE] para jugar");
       }
 
       // handle keyboard or mouse (after two seconds)
       if (updateCount > 50)
       {
-        if (Ps3.event.button_down.start)
+        if (Ps3.event.button_down.start || Ps3.event.button_down.select)
           starting_ = true;
       }
     }
@@ -165,7 +165,7 @@ struct GameScene : public Scene
   static const int ENEMIES_X_SPACE = 16; // Espacio entre enemigos
   static const int ENEMIES_Y_SPACE = 10;
   static const int ENEMIES_START_X = 0;
-  static const int ENEMIES_START_Y = 30;
+  static const int ENEMIES_START_Y = 60;
   static const int ENEMIES_STEP_X = 6;
   static const int ENEMIES_STEP_Y = 8;
 
@@ -246,13 +246,14 @@ struct GameScene : public Scene
 
   void init()
   {
-    if (!tiempoCapturado){
+    if (juegoCompletado){
       tiempoInicio = millis();
-      tiempoCapturado = true;
+      juegoCompletado = false;
+      score1_ = score2_ = 0;
     }
     // setup player 1
     player_->addBitmap(&bmpPlayer);
-    player_->moveTo(225, PLAYER1_Y);
+    player_->moveTo(75, PLAYER1_Y);
     player_->type = TYPE_PLAYER1;
     addSprite(player_);
     // setup player fire
@@ -264,7 +265,7 @@ struct GameScene : public Scene
 
     // setup player 2
     player2_->addBitmap(&bmpPlayer2);
-    player2_->moveTo(75, PLAYER1_Y);
+    player2_->moveTo(225, PLAYER1_Y);
     player2_->type = TYPE_PLAYER2;
     addSprite(player2_);
     // setup player fire 2
@@ -312,12 +313,12 @@ struct GameScene : public Scene
     canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
     canvas.selectFont(&fabgl::FONT_8x8);
     canvas.setPenColor(248, 252, 167);
-    canvas.drawText(133, 2, "TIEMPO");
+    canvas.drawText(133, 22, "TIEMPO");
     canvas.setPenColor(69, 142, 237);
-    canvas.setPenColor(169, 142, 237);
-    canvas.drawText(2, 2, "Jugador 1");
     canvas.setPenColor(230, 232, 235);
-    canvas.drawText(244, 2, "Jugador 2");
+    canvas.drawText(2, 22, "Jugador 1");
+    canvas.setPenColor(169, 142, 237);
+    canvas.drawText(244, 22, "Jugador 2");
     canvas.setPenColor(255, 255, 255);
     canvas.drawTextFmt(216, 181, "Dificultad %02d", dificuldad_);
     canvas.setPenColor(86, 154, 209);
@@ -335,9 +336,9 @@ struct GameScene : public Scene
   void drawScore()
   {
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(5, 14, "%05d", score1_);
+    canvas.drawTextFmt(5, 34, "%05d", score1_);
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(266, 14, "%05d", score2_);
+    canvas.drawTextFmt(266, 34, "%05d", score2_);
   }
 
   void moveEnemy(SISprite *enemy, int x, int y, bool *touchSide)
@@ -363,6 +364,8 @@ struct GameScene : public Scene
     for (int i = 0; i < ROWENEMIESCOUNT * 3; ++i)
       enemies_[i].allowDraw = false;
     // show game over
+    playerFire2_->visible = false;
+    playerFire_->visible = false;
     canvas.setPenColor(248, 252, 167);
     canvas.setBrushColor(28, 35, 92);
     canvas.fillRectangle(40, 60, 270, 130);
@@ -370,27 +373,21 @@ struct GameScene : public Scene
     canvas.setGlyphOptions(GlyphOptions().DoubleWidth(0));
     canvas.setPenColor(255, 255, 255);
     canvas.drawText(85, 72, "Tiempo Terminado!");
-    //Serial.println(score1_);
-    //Serial.println(score2_);
     if(score1_ > score2_){
       canvas.setPenColor(167, 170, 242);
-      canvas.drawText(50, 85, "El jugador 1 ha ganado con");
+      canvas.drawText(50, 86, "El jugador 1 ha ganado con");
       canvas.drawTextFmt(105, 96, "%d puntos", score1_);
     } else if (score2_ > score1_){
       canvas.setPenColor(167, 170, 242);
-      canvas.drawText(50, 80, "El jugador 2 ha ganado con");
-      canvas.drawTextFmt(105, 96, "%d puntos", score2_);
+      canvas.drawText(50, 86, "El jugador 2 ha ganado con");
+      canvas.drawTextFmt(115, 96, "%d puntos", score2_);
     }else{
       canvas.setPenColor(167, 170, 242);
       canvas.drawText(100, 90, "Es un empate!");
     }
     
     canvas.setPenColor(248, 252, 167);
-    canvas.drawText(95, 110, "Presiona [START]");
-    // change state
-    /*dificuldad_ = 1;
-    score2_ = 0;
-    score1_ = 0;*/
+    canvas.drawText(95, 110, "Presiona [VERDE]");
     tiempoTranscurrido = 0;
   }
 
@@ -463,33 +460,30 @@ struct GameScene : public Scene
           }
         }
       }
-      if (playerOneIsActive || playerTwoIsActive)
+      if (!playerOneIsActive)
       {
-        if (!playerOneIsActive)
+        if (updateCount % 5 == 0)
         {
-          if (updateCount % 5 == 0)
-          {
-            player_->visible = !player_->visible;
-          }
-          if ((updateCount % 60) == 0)
-          {
-            player_->visible = true;
-            playerOneIsActive = true;
-            playerFire2_->visible = true;
-          }
+          player_->visible = !player_->visible;
         }
-        if (!playerTwoIsActive)
+        if ((updateCount % 60) == 0)
         {
-          if (updateCount % 5 == 0)
-          {
-            player2_->visible = !player2_->visible;
-          }
-          if ((updateCount % 60) == 0)
-          {
-            player2_->visible = true;
-            playerTwoIsActive = true;
-            playerFire2_->visible = true;
-          }
+          player_->visible = true;
+          playerOneIsActive = true;
+          playerFire2_->visible = true;
+        }
+      }
+      if (!playerTwoIsActive)
+      {
+        if (updateCount % 5 == 0)
+        {
+          player2_->visible = !player2_->visible;
+        }
+        if ((updateCount % 60) == 0)
+        {
+          player2_->visible = true;
+          playerTwoIsActive = true;
+          playerFire2_->visible = true;
         }
       }
       if (playerVelX_ != 0 || player2VelX_ != 0)
@@ -557,13 +551,13 @@ struct GameScene : public Scene
       }
 
       // Uso del control de PS3 de jugador 1.
-      if (Ps3.data.analog.stick.rx > 90 || Ps3.data.analog.stick.rx < -90)
+      if (Ps3.data.analog.stick.lx > 40 || Ps3.data.analog.stick.lx < -40)
       {
-        if (Ps3.data.analog.stick.rx > 90)
+        if (Ps3.data.analog.stick.lx > 40)
         {
           playerVelX_ = +1;
         }
-        else if (Ps3.data.analog.stick.rx < -90)
+        else if (Ps3.data.analog.stick.lx < -40)
         {
           playerVelX_ = -1;
         }
@@ -573,17 +567,17 @@ struct GameScene : public Scene
         playerVelX_ = 0;
       }
 
-      if (abs(Ps3.event.analog_changed.button.cross) && !playerFire_->visible) // player fire?
+      if (abs(Ps3.event.analog_changed.button.down) && !playerFire_->visible) // player fire?
         fire();
 
       // Uso del control de PS3 de jugador 2.
-      if (Ps3.data.analog.stick.lx > 90 || Ps3.data.analog.stick.lx < -90)
+      if (Ps3.data.analog.stick.rx > 40 || Ps3.data.analog.stick.rx < -40)
       {
-        if (Ps3.data.analog.stick.lx > 90)
+        if (Ps3.data.analog.stick.rx > 40)
         {
           player2VelX_ = +1;
         }
-        else if (Ps3.data.analog.stick.lx < -90)
+        else if (Ps3.data.analog.stick.rx < -40)
         {
           player2VelX_ = -1;
         }
@@ -593,7 +587,7 @@ struct GameScene : public Scene
         player2VelX_ = 0;
       }
 
-      if (abs(Ps3.event.analog_changed.button.down) && !playerFire2_->visible) // player fire?
+      if (abs(Ps3.event.analog_changed.button.cross) && !playerFire2_->visible) // player fire?
         fire2();
     }
 
@@ -614,15 +608,15 @@ struct GameScene : public Scene
     }
 
     if (gameState_ == GAMESTATE_ENDGAME) {
-      tiempoCapturado = false;
-      if (Ps3.event.button_down.start) {
+      juegoCompletado = true;
+      if (Ps3.event.button_down.start || Ps3.event.button_down.select) {
+        dificuldad_ = 1;
         stop();
         DisplayController.removeSprites();
       }
       DisplayController.removeSprites();
-      //Serial.println("Game Over");
     } else {
-      canvas.drawTextFmt(150, 14, "%2d", (TIEMPO_LIMITE - tiempoTranscurrido)/1000);
+      canvas.drawTextFmt(150, 34, "%2d", (TIEMPO_LIMITE - tiempoTranscurrido)/1000);
     }
 
     DisplayController.refreshSprites();
@@ -676,28 +670,26 @@ struct GameScene : public Scene
       // Golpe del enemigo
       soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
       playerOneIsActive = false;
-      playerFire_->visible = false;
       player_->visible = false;
-      if (score2_ <= 50)
-      {
-        score2_ = 0;
-      } else {
-        score2_ -= 50;
-      }
-      updateScore_ = true;
-    }
-    if (playerTwoIsActive && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
-    {
-      //  Golpe de enemigo
-      soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
-      playerTwoIsActive = false;
-      playerFire2_->visible = true;
-      player2_->visible = false;
       if (score1_ <= 50)
       {
         score1_ = 0;
       } else {
         score1_ -= 50;
+      }
+      updateScore_ = true;
+    } 
+    if (playerTwoIsActive && sA->type == TYPE_ENEMIESFIRE && sB->type == TYPE_PLAYER2)
+    {
+      //  Golpe de enemigo
+      soundGenerator.playSamples(explosionSoundSamples, sizeof(explosionSoundSamples));
+      playerTwoIsActive = false;
+      player2_->visible = false;
+      if (score2_ <= 50)
+      {
+        score2_ = 0;
+      } else {
+        score2_ -= 50;
       }
       updateScore_ = true;
     }
@@ -710,7 +702,7 @@ struct GameScene : public Scene
       sB->setFrame(2);
       lastHitEnemy_ = sB;
       --enemiesAlive_;
-      score2_ += sB->enemyPoints;
+      score1_ += sB->enemyPoints;
       updateScore_ = true;
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
@@ -723,7 +715,7 @@ struct GameScene : public Scene
       sB->setFrame(2);
       lastHitEnemy_ = sB;
       --enemiesAlive_;
-      score1_ += sB->enemyPoints;
+      score2_ += sB->enemyPoints;
       updateScore_ = true;
       if (enemiesAlive_ == 0)
         gameState_ = GAMESTATE_LEVELCHANGING;
@@ -752,8 +744,7 @@ void setup()
 {
   //78:dd:08:4d:94:a4
   //24:6f:28:af:1c:66
-  Ps3.begin("78:dd:08:4d:94:a4");
-  //Serial.begin(115200);
+  Ps3.begin("24:6f:28:af:1c:66");
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
