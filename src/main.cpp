@@ -1,6 +1,5 @@
 #include "fabgl.h"
 #include "fabutils.h"
-#include <Ps3Controller.h>
 #include "sprites.h"
 #include "sounds.h"
 #include "WiFiGeneric.h"
@@ -20,6 +19,11 @@ static int score2_ = 0;
 static int score1_ = 0;
 static int dificuldad_ = 1;
 
+#define BUTTON_DOWN 14
+#define BUTTON_CROSS 13
+#define BUTTON_START 27
+#define PLAYER_1_X 26
+#define PLAYER_2_X 35
 // IntroScene
 
 struct IntroScene : public Scene
@@ -114,7 +118,7 @@ struct IntroScene : public Scene
       // handle keyboard or mouse (after two seconds)
       if (updateCount > 50)
       {
-        if (Ps3.event.button_down.start || Ps3.event.button_down.select)
+        if (digitalRead(BUTTON_START))
           starting_ = true;
       }
     }
@@ -160,7 +164,7 @@ struct GameScene : public Scene
   static const int PLAYERFIRECOUNT = 2;
   static const int ENEMIESFIRECOUNT = 1;
   static const int ENEMYMOTHERCOUNT = 1;
-  static const int SPRITESCOUNT = PLAYERSCOUNT + SHIELDSCOUNT + 3 * ROWENEMIESCOUNT + PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
+  static const int SPRITESCOUNT = PLAYERSCOUNT + SHIELDSCOUNT + 5 * ROWENEMIESCOUNT + PLAYERFIRECOUNT + ENEMIESFIRECOUNT + ENEMYMOTHERCOUNT;
 
   static const int ENEMIES_X_SPACE = 16; // Espacio entre enemigos
   static const int ENEMIES_Y_SPACE = 10;
@@ -180,7 +184,9 @@ struct GameScene : public Scene
   SISprite *enemiesR1_ = enemies_;
   SISprite *enemiesR2_ = enemiesR1_ + ROWENEMIESCOUNT;
   SISprite *enemiesR3_ = enemiesR2_ + ROWENEMIESCOUNT;
-  SISprite *playerFire_ = enemiesR3_ + ROWENEMIESCOUNT;
+  SISprite *enemiesR4_ = enemiesR3_ + ROWENEMIESCOUNT;
+  SISprite *enemiesR5_ = enemiesR4_ + ROWENEMIESCOUNT;
+  SISprite *playerFire_ = enemiesR5_ + ROWENEMIESCOUNT;
   SISprite *playerFire2_ = playerFire_ + 1;
   SISprite *enemiesFire_ = playerFire_ + PLAYERFIRECOUNT;
 
@@ -211,7 +217,7 @@ struct GameScene : public Scene
 
   int enemiesDir_ = ENEMY_MOV_RIGHT;
 
-  int enemiesAlive_ = ROWENEMIESCOUNT * 3;
+  int enemiesAlive_ = ROWENEMIESCOUNT * 5;
   int enemiesSoundCount_ = 0;
   SISprite *lastHitEnemy_ = nullptr;
   GameState gameState_ = GAMESTATE_RUNNING;
@@ -287,7 +293,9 @@ struct GameScene : public Scene
     {
       initEnemy(enemiesR1_[i].addBitmap(&bmpEnemyA[0])->addBitmap(&bmpEnemyA[1]), 30);
       initEnemy(enemiesR2_[i].addBitmap(&bmpEnemyB[0])->addBitmap(&bmpEnemyB[1]), 20);
-      initEnemy(enemiesR3_[i].addBitmap(&bmpEnemyC[0])->addBitmap(&bmpEnemyC[1]), 20);
+      initEnemy(enemiesR3_[i].addBitmap(&bmpEnemyB[0])->addBitmap(&bmpEnemyB[1]), 20);
+      initEnemy(enemiesR4_[i].addBitmap(&bmpEnemyC[0])->addBitmap(&bmpEnemyC[1]), 10);
+      initEnemy(enemiesR5_[i].addBitmap(&bmpEnemyC[0])->addBitmap(&bmpEnemyC[1]), 10);
     }
     // setup enemies fire
     enemiesFire_->addBitmap(&bmpEnemiesFire[0])->addBitmap(&bmpEnemiesFire[1]);
@@ -313,12 +321,12 @@ struct GameScene : public Scene
     canvas.setGlyphOptions(GlyphOptions().FillBackground(true));
     canvas.selectFont(&fabgl::FONT_8x8);
     canvas.setPenColor(248, 252, 167);
-    canvas.drawText(133, 22, "TIEMPO");
+    canvas.drawText(133, 5, "TIEMPO");
     canvas.setPenColor(69, 142, 237);
     canvas.setPenColor(230, 232, 235);
-    canvas.drawText(2, 22, "Jugador 1");
+    canvas.drawText(2, 5, "Jugador 1");
     canvas.setPenColor(169, 142, 237);
-    canvas.drawText(244, 22, "Jugador 2");
+    canvas.drawText(244, 5, "Jugador 2");
     canvas.setPenColor(255, 255, 255);
     canvas.drawTextFmt(216, 181, "Dificultad %02d", dificuldad_);
     canvas.setPenColor(86, 154, 209);
@@ -336,9 +344,9 @@ struct GameScene : public Scene
   void drawScore()
   {
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(5, 34, "%05d", score1_);
+    canvas.drawTextFmt(5, 17, "%05d", score1_);
     canvas.setPenColor(255, 255, 255);
-    canvas.drawTextFmt(266, 34, "%05d", score2_);
+    canvas.drawTextFmt(266, 17, "%05d", score2_);
   }
 
   void moveEnemy(SISprite *enemy, int x, int y, bool *touchSide)
@@ -361,7 +369,7 @@ struct GameScene : public Scene
   void gameOver()
   {
     // disable enemies drawing, so text can be over them
-    for (int i = 0; i < ROWENEMIESCOUNT * 3; ++i)
+    for (int i = 0; i < ROWENEMIESCOUNT * 5; ++i)
       enemies_[i].allowDraw = false;
     // show game over
     playerFire2_->visible = false;
@@ -423,6 +431,8 @@ struct GameScene : public Scene
           moveEnemy(&enemiesR1_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 0 * ENEMIES_Y_SPACE, &touchSide);
           moveEnemy(&enemiesR2_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 1 * ENEMIES_Y_SPACE, &touchSide);
           moveEnemy(&enemiesR3_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 2 * ENEMIES_Y_SPACE, &touchSide);
+          moveEnemy(&enemiesR4_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 3 * ENEMIES_Y_SPACE, &touchSide);
+          moveEnemy(&enemiesR5_[i], enemiesX_ + i * ENEMIES_X_SPACE, enemiesY_ + 4 * ENEMIES_Y_SPACE, &touchSide);
         }
         switch (enemiesDir_)
         {
@@ -439,12 +449,12 @@ struct GameScene : public Scene
         }
         // sound
         ++enemiesSoundCount_;
-        soundGenerator.playSamples(invadersSoundSamples[enemiesSoundCount_ % 4], invadersSoundSamplesSize[enemiesSoundCount_ % 4]);
+        soundGenerator.playSamples(invadersSoundSamples[enemiesSoundCount_ % 4], invadersSoundSamplesSize[enemiesSoundCount_ % 4], 50);
         // handle enemies fire generation
         if (!enemiesFire_->visible)
         {
           int shottingEnemy = random(enemiesAlive_);
-          for (int i = 0, a = 0; i < ROWENEMIESCOUNT * 3; ++i)
+          for (int i = 0, a = 0; i < ROWENEMIESCOUNT * 5; ++i)
           {
             if (enemies_[i].visible)
             {
@@ -550,14 +560,34 @@ struct GameScene : public Scene
         enemyMother_->visible = true;
       }
 
-      // Uso del control de PS3 de jugador 1.
-      if (Ps3.data.analog.stick.lx > 40 || Ps3.data.analog.stick.lx < -40)
+      // Uso del control de jugador 1.
+      if ((analogRead(PLAYER_1_X))/512 > 3 || analogRead(PLAYER_1_X)/512 < 3)
       {
-        if (Ps3.data.analog.stick.lx > 40)
+        if ((analogRead(PLAYER_1_X))/512 > 3)
+        {
+          player2VelX_ = -1;
+        }
+        else if ((analogRead(PLAYER_1_X))/512 < 3)
+        {
+          player2VelX_ = +1;
+        }
+      }
+      else
+      {
+        player2VelX_ = 0;
+      }
+
+      if (abs(digitalRead(BUTTON_DOWN)) && !playerFire_->visible) // player fire?
+        fire();
+
+      // Uso del control de jugador 2.
+      if ((analogRead(PLAYER_2_X))/512 > 3 || analogRead(PLAYER_2_X)/512 < 3)
+      {
+        if ((analogRead(PLAYER_2_X))/512 > 3)
         {
           playerVelX_ = +1;
         }
-        else if (Ps3.data.analog.stick.lx < -40)
+        else if ((analogRead(PLAYER_2_X))/512 < 3)
         {
           playerVelX_ = -1;
         }
@@ -567,27 +597,7 @@ struct GameScene : public Scene
         playerVelX_ = 0;
       }
 
-      if (abs(Ps3.event.analog_changed.button.down) && !playerFire_->visible) // player fire?
-        fire();
-
-      // Uso del control de PS3 de jugador 2.
-      if (Ps3.data.analog.stick.rx > 40 || Ps3.data.analog.stick.rx < -40)
-      {
-        if (Ps3.data.analog.stick.rx > 40)
-        {
-          player2VelX_ = +1;
-        }
-        else if (Ps3.data.analog.stick.rx < -40)
-        {
-          player2VelX_ = -1;
-        }
-      }
-      else
-      {
-        player2VelX_ = 0;
-      }
-
-      if (abs(Ps3.event.analog_changed.button.cross) && !playerFire2_->visible) // player fire?
+      if (abs(digitalRead(BUTTON_CROSS)) && !playerFire2_->visible) // player fire?
         fire2();
     }
 
@@ -609,14 +619,14 @@ struct GameScene : public Scene
 
     if (gameState_ == GAMESTATE_ENDGAME) {
       juegoCompletado = true;
-      if (Ps3.event.button_down.start || Ps3.event.button_down.select) {
-        dificuldad_ = 1;
+      if (digitalRead(BUTTON_START))
+      {
         stop();
         DisplayController.removeSprites();
       }
       DisplayController.removeSprites();
     } else {
-      canvas.drawTextFmt(150, 34, "%2d", (TIEMPO_LIMITE - tiempoTranscurrido)/1000);
+      canvas.drawTextFmt(150, 17, "%2d", (TIEMPO_LIMITE - tiempoTranscurrido)/1000);
     }
 
     DisplayController.refreshSprites();
@@ -744,7 +754,9 @@ void setup()
 {
   //78:dd:08:4d:94:a4
   //24:6f:28:af:1c:66
-  Ps3.begin("24:6f:28:af:1c:66");
+  pinMode(BUTTON_DOWN, INPUT_PULLUP);
+  pinMode(BUTTON_CROSS, INPUT_PULLUP);
+  pinMode(BUTTON_START, INPUT_PULLUP);
   DisplayController.begin();
   DisplayController.setResolution(VGA_320x200_75Hz);
 }
